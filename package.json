@@ -2,6 +2,8 @@
   "name": "Vorpol",
   "private": true,
   "version": "26.1.0",
+  "description": "A simple text editor for Windows",
+  "author": "Premev",
   "build": {
     "appId": "com.premev.Vorpol",
     "productName": "Vorpol",
