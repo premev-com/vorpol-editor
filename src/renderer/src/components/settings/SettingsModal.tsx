@@ -1,0 +1,168 @@
+import { X } from "lucide-react";
+import type { EditorSettings } from "@/types/settings";
+import { SettingRow } from "./SettingRow";
+import { Toggle } from "./Toggle";
+import { UpdateSection } from "./UpdateSection";
+
+export interface UpdateInfo {
+  current: string;
+  latest: string;
+  title: string;
+  downloadUrl: string;
+}
+
+interface SettingsModalProps {
+  open: boolean;
+  settings: EditorSettings;
+  onChange: (settings: EditorSettings) => void;
+  onClose: () => void;
+  updateInfo: UpdateInfo | null;
+  updatesChecked: boolean;
+  currentVersion: string | null;
+  onCheckForUpdates: () => Promise<UpdateInfo | null>;
+}
+
+export function SettingsModal({
+  open,
+  settings,
+  onChange,
+  onClose,
+  updateInfo,
+  updatesChecked,
+  currentVersion,
+  onCheckForUpdates,
+}: SettingsModalProps) {
+  if (!open) return null;
+
+  const update = (patch: Partial<EditorSettings>) =>
+    onChange({ ...settings, ...patch });
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-[480px] max-h-[80vh] overflow-y-auto rounded-lg border border-border bg-card shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+          <h2 className="text-sm font-semibold text-foreground">Settings</h2>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="px-5 py-4 space-y-5">
+          <section className="space-y-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              Editor
+            </h3>
+
+            <SettingRow
+              label="Font size"
+              value={`${settings.editorFontSize}px`}
+            >
+              <input
+                type="range"
+                min={12}
+                max={24}
+                value={settings.editorFontSize}
+                onChange={(e) =>
+                  update({ editorFontSize: Number(e.target.value) })
+                }
+                className="w-24 h-1 accent-primary"
+              />
+            </SettingRow>
+
+            <SettingRow label="Tab size" value={`${settings.tabSize} spaces`}>
+              <select
+                value={settings.tabSize}
+                onChange={(e) => update({ tabSize: Number(e.target.value) })}
+                className="bg-muted border border-border rounded-md px-2 py-0.5 text-xs text-foreground outline-none focus:border-primary appearance-none pr-6"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 0.4rem center",
+                }}
+              >
+                {[2, 4, 6, 8].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </SettingRow>
+
+            <SettingRow label="Word wrap">
+              <Toggle
+                checked={settings.wordWrap}
+                onChange={(v) => update({ wordWrap: v })}
+              />
+            </SettingRow>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              Preview
+            </h3>
+            <SettingRow
+              label="Font size"
+              value={`${settings.previewFontSize}px`}
+            >
+              <input
+                type="range"
+                min={12}
+                max={24}
+                value={settings.previewFontSize}
+                onChange={(e) =>
+                  update({ previewFontSize: Number(e.target.value) })
+                }
+                className="w-24 h-1 accent-primary"
+              />
+            </SettingRow>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              Behavior
+            </h3>
+            <SettingRow label="Auto-save">
+              <Toggle
+                checked={settings.autoSave}
+                onChange={(v) => update({ autoSave: v })}
+              />
+            </SettingRow>
+            <SettingRow label="Sync scroll">
+              <Toggle
+                checked={settings.syncScroll}
+                onChange={(v) => update({ syncScroll: v })}
+              />
+            </SettingRow>
+            <SettingRow label="Persist unsaved tabs">
+              <Toggle
+                checked={settings.persistUntitled}
+                onChange={(v) => update({ persistUntitled: v })}
+              />
+            </SettingRow>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              System
+            </h3>
+            <UpdateSection
+              updateInfo={updateInfo}
+              updatesChecked={updatesChecked}
+              currentVersion={currentVersion}
+              onCheckForUpdates={onCheckForUpdates}
+            />
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,76 @@
+import { basename } from "path";
+import * as fs from "fs";
+import type { FileHandler, FileResult } from "./types";
+
+const codeExtensions = [
+  "js",
+  "jsx",
+  "mjs",
+  "cjs",
+  "ts",
+  "tsx",
+  "py",
+  "pyw",
+  "rs",
+  "go",
+  "java",
+  "c",
+  "cpp",
+  "cc",
+  "cxx",
+  "h",
+  "hpp",
+  "cs",
+  "rb",
+  "php",
+  "swift",
+  "kt",
+  "scala",
+  "lua",
+  "r",
+  "sql",
+  "sh",
+  "bash",
+  "zsh",
+  "fish",
+  "ps1",
+  "bat",
+  "cmd",
+  "html",
+  "htm",
+  "css",
+  "scss",
+  "less",
+  "json",
+  "jsonc",
+  "xml",
+  "yaml",
+  "yml",
+  "toml",
+  "ini",
+  "cfg",
+  "conf",
+  "dockerfile",
+  "gitignore",
+  "env",
+  "graphql",
+  "gql",
+  "vue",
+  "svelte",
+  "astro",
+  "prisma",
+  "proto",
+];
+
+export const codeHandler: FileHandler = {
+  extensions: codeExtensions,
+
+  async read(filePath: string): Promise<FileResult> {
+    const content = fs.readFileSync(filePath, "utf-8");
+    return {
+      path: filePath,
+      name: basename(filePath),
+      content,
+    };
+  },
+};

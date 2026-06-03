@@ -1,0 +1,21 @@
+export interface EditorSettings {
+  theme: "dark" | "light";
+  editorFontSize: number;
+  tabSize: number;
+  wordWrap: boolean;
+  autoSave: boolean;
+  syncScroll: boolean;
+  persistUntitled: boolean;
+  previewFontSize: number;
+}
+
+export const DEFAULT_SETTINGS: EditorSettings = {
+  theme: "dark",
+  editorFontSize: 14,
+  tabSize: 2,
+  wordWrap: true,
+  autoSave: true,
+  syncScroll: true,
+  persistUntitled: true,
+  previewFontSize: 16,
+};
