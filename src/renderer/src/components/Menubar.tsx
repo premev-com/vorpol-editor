@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Download, Loader2, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { UpdateStatus } from "@/types/settings";
 
 interface MenuItem {
   label: string;
@@ -16,15 +17,6 @@ interface MenuDef {
   items?: (MenuItem | "separator")[];
   onClick?: () => void;
 }
-
-type UpdateStatus =
-  | "idle"
-  | "checking"
-  | "available"
-  | "downloading"
-  | "downloaded"
-  | "up-to-date"
-  | "error";
 
 interface MenubarProps {
   menus: MenuDef[];

@@ -17,7 +17,7 @@ import { TitleBar } from "@/components/TitleBar";
 import { EditorArea } from "@/components/EditorArea";
 import { SettingsModal } from "@/components/settings/SettingsModal";
 
-import { DEFAULT_SETTINGS, type EditorSettings } from "@/types/settings";
+import { DEFAULT_SETTINGS, type EditorSettings, type UpdateStatus } from "@/types/settings";
 
 const SETTINGS_KEY = "vorpol-settings";
 
@@ -72,15 +72,7 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [scrollFraction, setScrollFraction] = useState(0);
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
-  const [updateStatus, setUpdateStatus] = useState<
-    | "idle"
-    | "checking"
-    | "available"
-    | "downloading"
-    | "downloaded"
-    | "up-to-date"
-    | "error"
-  >("idle");
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus>("idle");
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
   const [currentVersion, setCurrentVersion] = useState<string | null>(null);
@@ -269,16 +261,13 @@ function App() {
   // -- File operations -----------------------------------------------------
 
   const handleOpen = useCallback(async () => {
-    console.log("[Open] clicked, electronAPI:", !!window.electronAPI);
     if (!window.electronAPI) {
       console.error("electronAPI not available — preload may have failed");
       return;
     }
 
     try {
-      console.log("[Open] calling openFile...");
       const result = await window.electronAPI.openFile();
-      console.log("[Open] result:", result);
       if (!result) return;
 
       // Result can be single file or array (multi-selection)

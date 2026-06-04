@@ -1,3 +1,12 @@
+export type UpdateStatus =
+  | "idle"
+  | "checking"
+  | "available"
+  | "downloading"
+  | "downloaded"
+  | "up-to-date"
+  | "error";
+
 export interface EditorSettings {
   theme: "dark" | "light";
   editorFontSize: number;

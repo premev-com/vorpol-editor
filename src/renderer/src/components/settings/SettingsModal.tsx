@@ -1,17 +1,8 @@
 import { X } from "lucide-react";
-import type { EditorSettings } from "@/types/settings";
+import type { EditorSettings, UpdateStatus } from "@/types/settings";
 import { SettingRow } from "./SettingRow";
 import { Toggle } from "./Toggle";
 import { UpdateSection } from "./UpdateSection";
-
-type UpdateStatus =
-  | "idle"
-  | "checking"
-  | "available"
-  | "downloading"
-  | "downloaded"
-  | "up-to-date"
-  | "error";
 
 interface SettingsModalProps {
   open: boolean;

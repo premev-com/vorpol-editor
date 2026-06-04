@@ -1,14 +1,6 @@
 import { Loader2, Download, RefreshCw } from "lucide-react";
+import type { UpdateStatus } from "@/types/settings";
 import { SettingRow } from "./SettingRow";
-
-type UpdateStatus =
-  | "idle"
-  | "checking"
-  | "available"
-  | "downloading"
-  | "downloaded"
-  | "up-to-date"
-  | "error";
 
 interface UpdateSectionProps {
   updateStatus: UpdateStatus;

@@ -56,13 +56,6 @@ export function LiveEditor({
     return () => window.removeEventListener("keydown", handler);
   }, [onSave]);
 
-  // Scroll sync support (receive)
-  const scrollFractionRef = useRef(0);
-
-  const handleContainerScroll = useCallback(() => {
-    // scrolling handled naturally; emit not needed for live editor
-  }, []);
-
   if (!value.trim()) {
     return (
       <div className="flex items-center justify-center h-full bg-card">
@@ -76,7 +69,6 @@ export function LiveEditor({
   return (
     <div
       ref={containerRef}
-      onScroll={handleContainerScroll}
       className="h-full overflow-auto bg-card"
     >
       <div

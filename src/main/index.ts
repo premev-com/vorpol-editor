@@ -164,7 +164,13 @@ ipcMain.handle("file:open", async () => {
     }),
   );
   const valid = files.filter((f): f is FileResult => f !== null);
-  return valid.length === 1 ? valid[0] : valid.length > 1 ? valid : null;
+  if (valid.length === 1) {
+    return valid[0];
+  }
+  if (valid.length > 1) {
+    return valid;
+  }
+  return null;
 });
 
 ipcMain.handle(
@@ -231,8 +237,8 @@ ipcMain.handle("temp:clear", async () => {
   try {
     const dir = getTempDir();
     for (const f of fs.readdirSync(dir)) fs.unlinkSync(join(dir, f));
-  } catch {
-    // ignore
+  } catch (err) {
+    console.error("Failed to clear temp files:", err);
   }
   return true;
 });

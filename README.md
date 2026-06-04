@@ -1,6 +1,15 @@
 # Vorpol — App
 
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+
 A desktop text/code editor for Windows. Supports Markdown, plain text, and code files with syntax highlighting and live preview.
+
+> **Repository:** [github.com/premev-com/vorpol-app](https://github.com/premev-com/vorpol-app)
+
+## System Requirements
+
+- **Windows** 10 or later
+- **Bun** (recommended) or **Node.js** 18+
 
 ## Stack
 
@@ -59,3 +68,7 @@ src/
 - Auto-save and unsaved tab persistence
 - Frameless window with custom title bar
 - Version check and update notification
+
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on submitting pull requests, reporting issues, and setting up your development environment.
