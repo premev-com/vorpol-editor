@@ -517,6 +517,7 @@ function App() {
         updateStatus={updateStatus}
         updateVersion={updateVersion}
         downloadProgress={downloadProgress}
+        onDownloadStart={() => setUpdateStatus("downloading")}
       />
 
       <EditorArea

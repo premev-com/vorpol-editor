@@ -31,6 +31,7 @@ interface MenubarProps {
   updateStatus: UpdateStatus;
   updateVersion: string | null;
   downloadProgress: number;
+  onDownloadStart?: () => void;
 }
 
 export function Menubar({
@@ -38,6 +39,7 @@ export function Menubar({
   updateStatus,
   updateVersion,
   downloadProgress,
+  onDownloadStart,
 }: MenubarProps) {
   const [openMenu, setOpenMenu] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -76,6 +78,7 @@ export function Menubar({
 
   const handleUpdateClick = () => {
     if (updateStatus === "available") {
+      onDownloadStart?.();
       window.electronAPI.downloadUpdate();
     } else if (updateStatus === "downloaded") {
       window.electronAPI.installUpdate();

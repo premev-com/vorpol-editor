@@ -1,7 +1,7 @@
 {
   "name": "Vorpol",
   "private": true,
-  "version": "26.0.0",
+  "version": "26.1.1",
   "description": "A simple text editor for Windows",
   "author": "Premev",
   "build": {

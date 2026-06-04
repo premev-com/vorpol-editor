@@ -58,7 +58,7 @@ export function UpdateSection({
             className="h-6 inline-flex items-center gap-1.5 rounded-md px-2.5 text-[11px] font-medium bg-muted text-muted-foreground"
           >
             <Loader2 className="w-3 h-3 animate-spin" />
-            Downloading {Math.round(downloadProgress)}%
+            Downloading...
           </button>
         )}
 
