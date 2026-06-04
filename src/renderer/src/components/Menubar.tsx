@@ -179,7 +179,7 @@ export function Menubar({
             {updateStatus === "downloading" && (
               <>
                 <Loader2 className="w-3 h-3 animate-spin" />
-                Downloading {Math.round(downloadProgress)}%
+                Downloading...
               </>
             )}
             {updateStatus === "downloaded" && (
