@@ -4,6 +4,7 @@ import * as fs from "fs";
 import { electronApp, is } from "@electron-toolkit/utils";
 import { readFile, isSupportedFile } from "./file-handlers/registry";
 import type { FileResult } from "./file-handlers/types";
+import { codeExtensions } from "./file-handlers/code";
 
 let mainWindow: BrowserWindow | null = null;
 let closeConfirmed = false;
@@ -149,24 +150,8 @@ ipcMain.handle("file:open", async () => {
         extensions: [
           "md",
           "txt",
-          "docx",
-          "js",
-          "ts",
-          "tsx",
-          "jsx",
-          "py",
-          "json",
-          "html",
-          "css",
-          "rs",
-          "go",
-          "java",
-          "c",
-          "cpp",
-          "xml",
-          "yaml",
-          "sql",
-          "sh",
+          // "docx",
+          ...codeExtensions,
         ],
       },
     ],
@@ -212,7 +197,8 @@ ipcMain.handle("file:saveAs", async (_, { content }: { content: string }) => {
 // -- Temp file IPC (unsaved tab persistence) -----------------------------
 
 function getTempDir(): string {
-  const dir = join(app.getPath("userData"), "temp");
+  const folder = is.dev ? "vorpol-dev-temp" : "vorpol-temp";
+  const dir = join(app.getPath("userData"), folder);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
