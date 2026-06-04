@@ -243,48 +243,38 @@ ipcMain.handle("shell:openExternal", async (_, url: string) => {
 
 // -- Update & version tracking ------------------------------------------
 
-const API_URL = process.env.VORPOL_API_URL || "http://localhost:3000";
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
 
-if (!is.dev) {
-  autoUpdater.autoDownload = false;
-  autoUpdater.autoInstallOnAppQuit = true;
+autoUpdater.on("checking-for-update", () => {
+  mainWindow?.webContents.send("update:checking");
+});
 
-  autoUpdater.setFeedURL({
-    provider: "generic",
-    url: `${API_URL}/api/updates`,
-  });
+autoUpdater.on("update-available", (info) => {
+  mainWindow?.webContents.send("update:available", info);
+});
 
-  autoUpdater.on("checking-for-update", () => {
-    mainWindow?.webContents.send("update:checking");
-  });
+autoUpdater.on("update-not-available", (info) => {
+  mainWindow?.webContents.send("update:not-available", info);
+});
 
-  autoUpdater.on("update-available", (info) => {
-    mainWindow?.webContents.send("update:available", info);
-  });
+autoUpdater.on("download-progress", (progress) => {
+  mainWindow?.webContents.send("update:download-progress", progress);
+});
 
-  autoUpdater.on("update-not-available", (info) => {
-    mainWindow?.webContents.send("update:not-available", info);
-  });
+autoUpdater.on("update-downloaded", (info) => {
+  mainWindow?.webContents.send("update:downloaded", info);
+});
 
-  autoUpdater.on("download-progress", (progress) => {
-    mainWindow?.webContents.send("update:download-progress", progress);
-  });
-
-  autoUpdater.on("update-downloaded", (info) => {
-    mainWindow?.webContents.send("update:downloaded", info);
-  });
-
-  autoUpdater.on("error", (error) => {
-    mainWindow?.webContents.send("update:error", error.message);
-  });
-}
+autoUpdater.on("error", (error) => {
+  mainWindow?.webContents.send("update:error", error.message);
+});
 
 ipcMain.handle("app:getVersion", () => {
   return app.getVersion();
 });
 
 ipcMain.handle("update:check", async () => {
-  if (is.dev) return;
   try {
     await autoUpdater.checkForUpdates();
   } catch (err) {
@@ -293,16 +283,16 @@ ipcMain.handle("update:check", async () => {
 });
 
 ipcMain.handle("update:download", async () => {
-  if (is.dev) return;
   try {
     await autoUpdater.downloadUpdate();
   } catch (err) {
-    console.error("Update download failed:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("Update download failed:", message);
+    mainWindow?.webContents.send("update:error", message);
   }
 });
 
 ipcMain.handle("update:install", () => {
-  if (is.dev) return;
   autoUpdater.quitAndInstall();
 });
 

@@ -113,7 +113,8 @@ function App() {
         setUpdateVersion(info.version);
         setUpdateStatus("downloaded");
       }),
-      window.electronAPI.onUpdateError(() => {
+      window.electronAPI.onUpdateError((err) => {
+        console.error("Update error:", err);
         setUpdateStatus("error");
       }),
     ];
