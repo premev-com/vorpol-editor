@@ -114,7 +114,7 @@ export function Editor({
         onScroll={handleScroll}
         spellCheck={false}
         className={cn(
-          "flex-1 bg-transparent text-foreground font-mono resize-none outline-none border-none p-4 overflow-auto placeholder:text-muted-foreground/30",
+          "flex-1 bg-transparent text-foreground tracking-wide resize-none outline-none border-none p-4 overflow-auto placeholder:text-muted-foreground/30",
           wordWrap ? "whitespace-pre-wrap break-words" : "whitespace-pre",
         )}
         style={{
