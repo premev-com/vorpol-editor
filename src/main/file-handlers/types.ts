@@ -8,6 +8,6 @@ export interface FileResult {
 }
 
 export interface FileHandler {
-  extensions: string[];
+  extensions: readonly string[];
   read(filePath: string): Promise<FileResult>;
 }

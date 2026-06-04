@@ -4,83 +4,21 @@ import { LiveEditor } from "@/components/LiveEditor";
 import { CodeEditor } from "@/components/CodeEditor";
 import { Preview } from "@/components/Preview";
 
-// -- File-type helpers (extend this when adding new types) --------------
+import { CODE_EXTENSIONS, FILE_KIND_MAP } from "@shared/extensions";
+
+// -- File-type helpers --------------------------------------------------
 
 type FileKind = "markdown" | "text" | "word" | "code" | "unknown";
 
-const codeExts = new Set([
-  "js",
-  "jsx",
-  "mjs",
-  "cjs",
-  "ts",
-  "tsx",
-  "py",
-  "pyw",
-  "rs",
-  "go",
-  "java",
-  "c",
-  "cpp",
-  "cc",
-  "cxx",
-  "h",
-  "hpp",
-  "cs",
-  "rb",
-  "php",
-  "swift",
-  "kt",
-  "scala",
-  "lua",
-  "r",
-  "sql",
-  "sh",
-  "bash",
-  "zsh",
-  "fish",
-  "ps1",
-  "bat",
-  "cmd",
-  "html",
-  "htm",
-  "css",
-  "scss",
-  "less",
-  "json",
-  "jsonc",
-  "xml",
-  "yaml",
-  "yml",
-  "toml",
-  "ini",
-  "cfg",
-  "conf",
-  "dockerfile",
-  "gitignore",
-  "env",
-  "graphql",
-  "gql",
-  "vue",
-  "svelte",
-  "astro",
-  "prisma",
-  "proto",
-]);
+const codeExts = new Set<string>(CODE_EXTENSIONS);
 
 function detectFileKind(fileName: string | null): FileKind {
   if (!fileName) return "unknown";
   const ext = fileName.toLowerCase().split(".").pop();
-  switch (ext) {
-    case "md":
-      return "markdown";
-    case "txt":
-      return "text";
-    case "docx":
-      return "word";
-    default:
-      return codeExts.has(ext ?? "") ? "code" : "unknown";
+  if (ext && ext in FILE_KIND_MAP) {
+    return FILE_KIND_MAP[ext] as FileKind;
   }
+  return codeExts.has(ext ?? "") ? "code" : "unknown";
 }
 
 // -- Props ----------------------------------------------------------------

@@ -4,7 +4,7 @@ import * as fs from "fs";
 import { electronApp, is } from "@electron-toolkit/utils";
 import { readFile, isSupportedFile } from "./file-handlers/registry";
 import type { FileResult } from "./file-handlers/types";
-import { codeExtensions } from "./file-handlers/code";
+import { CODE_EXTENSIONS, OTHER_EXTENSIONS } from "../shared/extensions";
 import { autoUpdater } from "electron-updater";
 
 let mainWindow: BrowserWindow | null = null;
@@ -148,12 +148,7 @@ ipcMain.handle("file:open", async () => {
     filters: [
       {
         name: "Supported Files",
-        extensions: [
-          "md",
-          "txt",
-          // "docx",
-          ...codeExtensions,
-        ],
+        extensions: [...OTHER_EXTENSIONS, ...CODE_EXTENSIONS],
       },
     ],
   });
