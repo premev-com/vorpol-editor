@@ -11,6 +11,13 @@ interface SaveAsResult {
   name: string;
 }
 
+interface DownloadProgress {
+  percent: number;
+  bytesPerSecond: number;
+  total: number;
+  transferred: number;
+}
+
 interface ElectronAPI {
   ready: () => Promise<FileResult | null>;
   openFile: () => Promise<FileResult | null>;
@@ -32,12 +39,17 @@ interface ElectronAPI {
   openExternal: (url: string) => Promise<void>;
   // Update & version tracking
   getVersion: () => Promise<string>;
-  checkForUpdates: () => Promise<{
-    current: string;
-    latest: string;
-    title: string;
-    downloadUrl: string;
-  } | null>;
+  checkForUpdates: () => Promise<void>;
+  downloadUpdate: () => Promise<void>;
+  installUpdate: () => Promise<void>;
+  onUpdateChecking: (callback: () => void) => () => void;
+  onUpdateAvailable: (callback: (info: unknown) => void) => () => void;
+  onUpdateNotAvailable: (callback: (info: unknown) => void) => () => void;
+  onDownloadProgress: (
+    callback: (progress: DownloadProgress) => void,
+  ) => () => void;
+  onUpdateDownloaded: (callback: (info: unknown) => void) => () => void;
+  onUpdateError: (callback: (error: string) => void) => () => void;
 }
 
 declare global {

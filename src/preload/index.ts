@@ -49,11 +49,37 @@ contextBridge.exposeInMainWorld("electronAPI", {
   openExternal: (url: string) => ipcRenderer.invoke("shell:openExternal", url),
   // Update & version tracking
   getVersion: () => ipcRenderer.invoke("app:getVersion") as Promise<string>,
-  checkForUpdates: () =>
-    ipcRenderer.invoke("app:checkForUpdates") as Promise<{
-      current: string;
-      latest: string;
-      title: string;
-      downloadUrl: string;
-    } | null>,
+  checkForUpdates: () => ipcRenderer.invoke("update:check"),
+  downloadUpdate: () => ipcRenderer.invoke("update:download"),
+  installUpdate: () => ipcRenderer.invoke("update:install"),
+  onUpdateChecking: (cb: () => void) => {
+    ipcRenderer.on("update:checking", cb);
+    return () => ipcRenderer.removeListener("update:checking", cb);
+  },
+  onUpdateAvailable: (cb: (info: unknown) => void) => {
+    const handler = (_e: unknown, info: unknown) => cb(info);
+    ipcRenderer.on("update:available", handler);
+    return () => ipcRenderer.removeListener("update:available", handler);
+  },
+  onUpdateNotAvailable: (cb: (info: unknown) => void) => {
+    const handler = (_e: unknown, info: unknown) => cb(info);
+    ipcRenderer.on("update:not-available", handler);
+    return () => ipcRenderer.removeListener("update:not-available", handler);
+  },
+  onDownloadProgress: (cb: (progress: unknown) => void) => {
+    const handler = (_e: unknown, p: unknown) => cb(p);
+    ipcRenderer.on("update:download-progress", handler);
+    return () =>
+      ipcRenderer.removeListener("update:download-progress", handler);
+  },
+  onUpdateDownloaded: (cb: (info: unknown) => void) => {
+    const handler = (_e: unknown, info: unknown) => cb(info);
+    ipcRenderer.on("update:downloaded", handler);
+    return () => ipcRenderer.removeListener("update:downloaded", handler);
+  },
+  onUpdateError: (cb: (err: string) => void) => {
+    const handler = (_e: unknown, err: string) => cb(err);
+    ipcRenderer.on("update:error", handler);
+    return () => ipcRenderer.removeListener("update:error", handler);
+  },
 });

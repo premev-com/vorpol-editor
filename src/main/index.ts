@@ -5,6 +5,7 @@ import { electronApp, is } from "@electron-toolkit/utils";
 import { readFile, isSupportedFile } from "./file-handlers/registry";
 import type { FileResult } from "./file-handlers/types";
 import { codeExtensions } from "./file-handlers/code";
+import { autoUpdater } from "electron-updater";
 
 let mainWindow: BrowserWindow | null = null;
 let closeConfirmed = false;
@@ -249,43 +250,65 @@ ipcMain.handle("shell:openExternal", async (_, url: string) => {
 
 const API_URL = process.env.VORPOL_API_URL || "http://localhost:3000";
 
+if (!is.dev) {
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.setFeedURL({
+    provider: "generic",
+    url: `${API_URL}/api/updates`,
+  });
+
+  autoUpdater.on("checking-for-update", () => {
+    mainWindow?.webContents.send("update:checking");
+  });
+
+  autoUpdater.on("update-available", (info) => {
+    mainWindow?.webContents.send("update:available", info);
+  });
+
+  autoUpdater.on("update-not-available", (info) => {
+    mainWindow?.webContents.send("update:not-available", info);
+  });
+
+  autoUpdater.on("download-progress", (progress) => {
+    mainWindow?.webContents.send("update:download-progress", progress);
+  });
+
+  autoUpdater.on("update-downloaded", (info) => {
+    mainWindow?.webContents.send("update:downloaded", info);
+  });
+
+  autoUpdater.on("error", (error) => {
+    mainWindow?.webContents.send("update:error", error.message);
+  });
+}
+
 ipcMain.handle("app:getVersion", () => {
   return app.getVersion();
 });
 
-ipcMain.handle("app:checkForUpdates", async () => {
+ipcMain.handle("update:check", async () => {
+  if (is.dev) return;
   try {
-    const res = await fetch(`${API_URL}/api/releases`);
-    if (!res.ok) return null;
-
-    const data = (await res.json()) as {
-      success: boolean;
-      releases: Array<{
-        version: string;
-        title: string;
-        download_count: number;
-      }>;
-    };
-
-    if (!data.success || !data.releases?.length) return null;
-
-    // First published release is the latest (ordered desc by publishedAt)
-    const latest = data.releases[0]!;
-    const currentVersion = app.getVersion();
-
-    if (latest.version !== currentVersion) {
-      return {
-        current: currentVersion,
-        latest: latest.version,
-        title: latest.title,
-        downloadUrl: `${API_URL}/api/download/latest`,
-      };
-    }
-
-    return null;
-  } catch {
-    return null;
+    await autoUpdater.checkForUpdates();
+  } catch (err) {
+    console.error("Update check failed:", err);
   }
+});
+
+ipcMain.handle("update:download", async () => {
+  if (is.dev) return;
+  try {
+    await autoUpdater.downloadUpdate();
+  } catch (err) {
+    console.error("Update download failed:", err);
+  }
+});
+
+ipcMain.handle("update:install", () => {
+  if (is.dev) return;
+  autoUpdater.quitAndInstall();
 });
 
 // -- App lifecycle -------------------------------------------------------

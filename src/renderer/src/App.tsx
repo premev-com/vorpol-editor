@@ -16,7 +16,7 @@ import { Menubar } from "@/components/Menubar";
 import { TitleBar } from "@/components/TitleBar";
 import { EditorArea } from "@/components/EditorArea";
 import { SettingsModal } from "@/components/settings/SettingsModal";
-import type { UpdateInfo } from "@/components/settings/SettingsModal";
+
 import { DEFAULT_SETTINGS, type EditorSettings } from "@/types/settings";
 
 const SETTINGS_KEY = "vorpol-settings";
@@ -72,8 +72,17 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [scrollFraction, setScrollFraction] = useState(0);
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
-  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
-  const [updatesChecked, setUpdatesChecked] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<
+    | "idle"
+    | "checking"
+    | "available"
+    | "downloading"
+    | "downloaded"
+    | "up-to-date"
+    | "error"
+  >("idle");
+  const [updateVersion, setUpdateVersion] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<number>(0);
   const [currentVersion, setCurrentVersion] = useState<string | null>(null);
 
   // Persist settings to localStorage
@@ -81,13 +90,38 @@ function App() {
     saveSettings(settings);
   }, [settings]);
 
-  // Check for updates on mount
+  // Update event listeners
   useEffect(() => {
     window.electronAPI.getVersion().then(setCurrentVersion);
-    window.electronAPI.checkForUpdates().then((info) => {
-      setUpdateInfo(info);
-      setUpdatesChecked(true);
-    });
+
+    const unsubs = [
+      window.electronAPI.onUpdateChecking(() => {
+        setUpdateStatus("checking");
+      }),
+      window.electronAPI.onUpdateAvailable((info: any) => {
+        setUpdateVersion(info.version);
+        setUpdateStatus("available");
+      }),
+      window.electronAPI.onUpdateNotAvailable(() => {
+        setUpdateStatus("up-to-date");
+      }),
+      window.electronAPI.onDownloadProgress((p: any) => {
+        setUpdateStatus("downloading");
+        setDownloadProgress(p.percent);
+      }),
+      window.electronAPI.onUpdateDownloaded((info: any) => {
+        setUpdateVersion(info.version);
+        setUpdateStatus("downloaded");
+      }),
+      window.electronAPI.onUpdateError(() => {
+        setUpdateStatus("error");
+      }),
+    ];
+
+    // Auto-check on mount
+    window.electronAPI.checkForUpdates();
+
+    return () => unsubs.forEach((u) => u());
   }, []);
 
   // Derived
@@ -477,7 +511,12 @@ function App() {
         onSave={handleSave}
       />
 
-      <Menubar menus={menus} updateInfo={updateInfo} />
+      <Menubar
+        menus={menus}
+        updateStatus={updateStatus}
+        updateVersion={updateVersion}
+        downloadProgress={downloadProgress}
+      />
 
       <EditorArea
         fileName={activeTab.fileName}
@@ -502,15 +541,10 @@ function App() {
         settings={settings}
         onChange={setSettings}
         onClose={() => setSettingsOpen(false)}
-        updateInfo={updateInfo}
-        updatesChecked={updatesChecked}
+        updateStatus={updateStatus}
+        updateVersion={updateVersion}
+        downloadProgress={downloadProgress}
         currentVersion={currentVersion}
-        onCheckForUpdates={async () => {
-          const info = await window.electronAPI.checkForUpdates();
-          setUpdateInfo(info);
-          setUpdatesChecked(true);
-          return info;
-        }}
       />
 
       {closeConfirmOpen && (

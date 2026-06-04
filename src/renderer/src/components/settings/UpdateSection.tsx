@@ -1,55 +1,35 @@
-import { useState, useEffect, useRef } from "react";
-import { Loader2, Download } from "lucide-react";
+import { Loader2, Download, RefreshCw } from "lucide-react";
 import { SettingRow } from "./SettingRow";
 
-interface UpdateInfo {
-  current: string;
-  latest: string;
-  title: string;
-  downloadUrl: string;
-}
+type UpdateStatus =
+  | "idle"
+  | "checking"
+  | "available"
+  | "downloading"
+  | "downloaded"
+  | "up-to-date"
+  | "error";
 
 interface UpdateSectionProps {
-  updateInfo: UpdateInfo | null;
-  updatesChecked: boolean;
+  updateStatus: UpdateStatus;
+  updateVersion: string | null;
+  downloadProgress: number;
   currentVersion: string | null;
-  onCheckForUpdates: () => Promise<UpdateInfo | null>;
 }
 
 export function UpdateSection({
-  updateInfo,
-  updatesChecked,
+  updateStatus,
+  updateVersion,
+  downloadProgress,
   currentVersion,
-  onCheckForUpdates,
 }: UpdateSectionProps) {
-  const [checking, setChecking] = useState(false);
-  const [localUpdateInfo, setLocalUpdateInfo] = useState<UpdateInfo | null>(
-    updateInfo,
-  );
-  const [checked, setChecked] = useState(updatesChecked);
-  const checkedTimer = useRef<ReturnType<typeof setTimeout>>();
-
-  useEffect(() => {
-    setLocalUpdateInfo(updateInfo);
-    setChecked(updatesChecked);
-
-    if (updatesChecked && !updateInfo) {
-      checkedTimer.current = setTimeout(() => setChecked(false), 3000);
-    }
-
-    return () => clearTimeout(checkedTimer.current);
-  }, [updatesChecked, updateInfo]);
-
-  const handleCheck = async () => {
-    clearTimeout(checkedTimer.current);
-    setChecking(true);
-    const info = await onCheckForUpdates();
-    setLocalUpdateInfo(info);
-    setChecked(true);
-    setChecking(false);
-
-    if (!info) {
-      checkedTimer.current = setTimeout(() => setChecked(false), 3000);
+  const handleClick = () => {
+    if (updateStatus === "available") {
+      window.electronAPI.downloadUpdate();
+    } else if (updateStatus === "downloaded") {
+      window.electronAPI.installUpdate();
+    } else if (updateStatus === "idle" || updateStatus === "error") {
+      window.electronAPI.checkForUpdates();
     }
   };
 
@@ -62,40 +42,71 @@ export function UpdateSection({
       </SettingRow>
 
       <SettingRow label="Updates">
-        {localUpdateInfo ? (
+        {updateStatus === "available" && (
           <button
-            onClick={() =>
-              window.electronAPI?.openExternal(localUpdateInfo.downloadUrl)
-            }
+            onClick={handleClick}
             className="h-6 inline-flex items-center gap-1.5 rounded-md bg-primary px-2.5 text-[11px] font-medium text-primary-foreground shadow hover:bg-primary/90 transition-colors"
           >
             <Download className="w-3 h-3" />
-            Update to v{localUpdateInfo.latest}
+            Update to v{updateVersion}
           </button>
-        ) : checked ? (
+        )}
+
+        {updateStatus === "downloading" && (
           <button
-            disabled={true}
-            className="h-6 inline-flex items-center gap-1.5 rounded-md px-2.5 text-[11px] font-medium bg-muted text-muted-foreground transition-colors disabled:opacity-50"
+            disabled
+            className="h-6 inline-flex items-center gap-1.5 rounded-md px-2.5 text-[11px] font-medium bg-muted text-muted-foreground"
           >
-            {checking && <Loader2 className="w-3 h-3 animate-spin" />}
-            {checking ? "Checking..." : "Up to date"}
+            <Download className="w-3 h-3" />
+            {Math.round(downloadProgress)}%
           </button>
-        ) : (
+        )}
+
+        {updateStatus === "downloaded" && (
           <button
-            onClick={handleCheck}
-            disabled={checking}
-            className="h-6 inline-flex items-center gap-1.5 rounded-md px-2.5 text-[11px] font-medium bg-muted text-foreground hover:bg-muted/80 transition-colors disabled:opacity-50"
+            onClick={handleClick}
+            className="h-6 inline-flex items-center gap-1.5 rounded-md bg-primary px-2.5 text-[11px] font-medium text-primary-foreground shadow hover:bg-primary/90 transition-colors"
           >
-            {checking && <Loader2 className="w-3 h-3 animate-spin" />}
-            {checking ? "Checking..." : "Check for updates"}
+            <RefreshCw className="w-3 h-3" />
+            Restart to install
+          </button>
+        )}
+
+        {updateStatus === "checking" && (
+          <button
+            disabled
+            className="h-6 inline-flex items-center gap-1.5 rounded-md px-2.5 text-[11px] font-medium bg-muted text-muted-foreground"
+          >
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Checking...
+          </button>
+        )}
+
+        {updateStatus === "up-to-date" && (
+          <span className="text-[11px] font-medium text-muted-foreground">
+            Up to date
+          </span>
+        )}
+
+        {(updateStatus === "idle" || updateStatus === "error") && (
+          <button
+            onClick={handleClick}
+            className="h-6 inline-flex items-center gap-1.5 rounded-md px-2.5 text-[11px] font-medium bg-muted text-foreground hover:bg-muted/80 transition-colors"
+          >
+            Check for updates
           </button>
         )}
       </SettingRow>
 
-      {localUpdateInfo && (
+      {updateStatus === "available" && updateVersion && (
         <p className="text-xs text-muted-foreground">
-          {localUpdateInfo.title} (v{localUpdateInfo.latest}) is available. You
-          are on v{currentVersion}.
+          v{updateVersion} is available. You are on v{currentVersion}.
+        </p>
+      )}
+
+      {updateStatus === "error" && (
+        <p className="text-xs text-red-400">
+          Update check failed. Click to retry.
         </p>
       )}
     </>

@@ -10,6 +10,10 @@
     "directories": {
       "output": "dist"
     },
+    "publish": {
+      "provider": "generic",
+      "url": "https://api.vorpol.premev.com/api/updates"
+    },
     "fileAssociations": [
       {
         "ext": "md",
@@ -70,6 +74,7 @@
     "@tailwindcss/vite": "^4.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "electron-updater": "^6.8.3",
     "electron-vite": "^5.0.0",
     "highlight.js": "^11.11.1",
     "lucide-react": "^0.451.0",

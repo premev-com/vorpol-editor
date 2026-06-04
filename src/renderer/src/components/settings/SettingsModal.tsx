@@ -4,22 +4,24 @@ import { SettingRow } from "./SettingRow";
 import { Toggle } from "./Toggle";
 import { UpdateSection } from "./UpdateSection";
 
-export interface UpdateInfo {
-  current: string;
-  latest: string;
-  title: string;
-  downloadUrl: string;
-}
+type UpdateStatus =
+  | "idle"
+  | "checking"
+  | "available"
+  | "downloading"
+  | "downloaded"
+  | "up-to-date"
+  | "error";
 
 interface SettingsModalProps {
   open: boolean;
   settings: EditorSettings;
   onChange: (settings: EditorSettings) => void;
   onClose: () => void;
-  updateInfo: UpdateInfo | null;
-  updatesChecked: boolean;
+  updateStatus: UpdateStatus;
+  updateVersion: string | null;
+  downloadProgress: number;
   currentVersion: string | null;
-  onCheckForUpdates: () => Promise<UpdateInfo | null>;
 }
 
 export function SettingsModal({
@@ -27,10 +29,10 @@ export function SettingsModal({
   settings,
   onChange,
   onClose,
-  updateInfo,
-  updatesChecked,
+  updateStatus,
+  updateVersion,
+  downloadProgress,
   currentVersion,
-  onCheckForUpdates,
 }: SettingsModalProps) {
   if (!open) return null;
 
@@ -155,10 +157,10 @@ export function SettingsModal({
               System
             </h3>
             <UpdateSection
-              updateInfo={updateInfo}
-              updatesChecked={updatesChecked}
+              updateStatus={updateStatus}
+              updateVersion={updateVersion}
+              downloadProgress={downloadProgress}
               currentVersion={currentVersion}
-              onCheckForUpdates={onCheckForUpdates}
             />
           </section>
         </div>

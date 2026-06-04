@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Download } from "lucide-react";
+import { Download, Loader2, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MenuItem {
@@ -17,17 +17,28 @@ interface MenuDef {
   onClick?: () => void;
 }
 
+type UpdateStatus =
+  | "idle"
+  | "checking"
+  | "available"
+  | "downloading"
+  | "downloaded"
+  | "up-to-date"
+  | "error";
+
 interface MenubarProps {
   menus: MenuDef[];
-  updateInfo?: {
-    current: string;
-    latest: string;
-    title: string;
-    downloadUrl: string;
-  } | null;
+  updateStatus: UpdateStatus;
+  updateVersion: string | null;
+  downloadProgress: number;
 }
 
-export function Menubar({ menus, updateInfo }: MenubarProps) {
+export function Menubar({
+  menus,
+  updateStatus,
+  updateVersion,
+  downloadProgress,
+}: MenubarProps) {
   const [openMenu, setOpenMenu] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -62,6 +73,22 @@ export function Menubar({ menus, updateInfo }: MenubarProps) {
       setOpenMenu(openMenu === i ? null : i);
     }
   };
+
+  const handleUpdateClick = () => {
+    if (updateStatus === "available") {
+      window.electronAPI.downloadUpdate();
+    } else if (updateStatus === "downloaded") {
+      window.electronAPI.installUpdate();
+    } else if (updateStatus === "idle" || updateStatus === "error") {
+      window.electronAPI.checkForUpdates();
+    }
+  };
+
+  const showUpdateButton =
+    updateStatus === "available" ||
+    updateStatus === "downloading" ||
+    updateStatus === "downloaded" ||
+    updateStatus === "checking";
 
   return (
     <nav
@@ -126,17 +153,42 @@ export function Menubar({ menus, updateInfo }: MenubarProps) {
       })}
 
       {/* Right side — update button */}
-      {updateInfo && (
+      {showUpdateButton && (
         <div className="ml-auto flex items-center pr-2">
           <button
-            onClick={() =>
-              window.electronAPI?.openExternal(updateInfo.downloadUrl)
-            }
-            className="h-6 inline-flex items-center gap-1.5 rounded-md bg-primary/15 px-2.5 text-[11px] font-medium text-primary hover:bg-primary/25 transition-colors"
-            title={`v${updateInfo.latest} available: click to download`}
+            onClick={handleUpdateClick}
+            className={cn(
+              "h-6 inline-flex items-center gap-1.5 rounded-md px-2.5 text-[11px] font-medium transition-colors",
+              updateStatus === "downloaded" &&
+                "bg-primary text-primary-foreground hover:bg-primary/90",
+              updateStatus === "downloading" && "bg-primary/15 text-primary",
+              updateStatus === "available" &&
+                "bg-primary/15 text-primary hover:bg-primary/25",
+              updateStatus === "checking" && "bg-muted text-muted-foreground",
+            )}
+            disabled={updateStatus === "checking"}
           >
-            <Download className="w-3 h-3" />
-            Update to v{updateInfo.latest}
+            {updateStatus === "checking" && (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            )}
+            {updateStatus === "downloading" && (
+              <>
+                <Download className="w-3 h-3" />
+                {Math.round(downloadProgress)}%
+              </>
+            )}
+            {updateStatus === "downloaded" && (
+              <>
+                <RefreshCw className="w-3 h-3" />
+                Restart to update
+              </>
+            )}
+            {updateStatus === "available" && (
+              <>
+                <Download className="w-3 h-3" />
+                Update to v{updateVersion}
+              </>
+            )}
           </button>
         </div>
       )}
