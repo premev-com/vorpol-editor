@@ -1,10 +1,10 @@
-# Vorpol: Windows Application
+# Vorpol Editor
 
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
 A desktop text/code editor for Windows. Supports Markdown, plain text, and code files with syntax highlighting and live preview.
 
-> **Repository:** [github.com/premev-com/vorpol-app](https://github.com/premev-com/vorpol-app)
+<img width="1717" height="1385" alt="vorpol-showcase" src="https://github.com/user-attachments/assets/fd3eeecd-0210-4817-bbe6-66a5a1d57cd2" />
 
 ## System Requirements
 
