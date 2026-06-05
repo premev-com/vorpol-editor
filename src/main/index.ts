@@ -10,7 +10,7 @@ import { autoUpdater } from "electron-updater";
 let mainWindow: BrowserWindow | null = null;
 let closeConfirmed = false;
 
-// -- Single-instance lock ------------------------------------------------
+// Single-instance lock
 
 const gotTheLock = app.requestSingleInstanceLock();
 
@@ -29,7 +29,7 @@ if (!gotTheLock) {
   });
 }
 
-// -- Helpers -------------------------------------------------------------
+// Helpers
 
 /** Pull the first supported file path from argv (case-insensitive). */
 function extractFileFromArgs(argv: string[]): string | null {
@@ -51,7 +51,7 @@ async function sendFileToRenderer(filePath: string): Promise<void> {
   }
 }
 
-// -- Window --------------------------------------------------------------
+// Window
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -106,7 +106,7 @@ function createWindow(): void {
   );
 }
 
-// -- IPC handlers --------------------------------------------------------
+// IPC handlers
 
 /** Renderer calls this on mount — returns a cold-start file if one was passed via command line. */
 ipcMain.handle("renderer:ready", async () => {
@@ -196,7 +196,7 @@ ipcMain.handle("file:saveAs", async (_, { content }: { content: string }) => {
   return { path: result.filePath, name: basename(result.filePath) };
 });
 
-// -- Temp file IPC (unsaved tab persistence) -----------------------------
+// Temp file IPC (unsaved tab persistence)
 
 function getTempDir(): string {
   const folder = is.dev ? "vorpol-dev-temp" : "vorpol-temp";
@@ -247,7 +247,7 @@ ipcMain.handle("shell:openExternal", async (_, url: string) => {
   return shell.openExternal(url);
 });
 
-// -- Update & version tracking ------------------------------------------
+// Update & version tracking
 
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
@@ -302,7 +302,7 @@ ipcMain.handle("update:install", () => {
   autoUpdater.quitAndInstall();
 });
 
-// -- App lifecycle -------------------------------------------------------
+// App lifecycle
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId("com.vorpol.app");
