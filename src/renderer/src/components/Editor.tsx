@@ -1,128 +1,131 @@
-import { useRef, useCallback, useEffect } from "react";
-import { cn } from "@/lib/utils";
+import { useEffect, useRef } from "react";
+import { EditorState } from "@codemirror/state";
+import {
+  EditorView,
+  keymap,
+  lineNumbers,
+  highlightActiveLine,
+} from "@codemirror/view";
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import {
+  syntaxHighlighting,
+  bracketMatching,
+  indentOnInput,
+} from "@codemirror/language";
+import { closeBrackets } from "@codemirror/autocomplete";
+import { editorHighlight, getLanguage } from "@/lib/editor-languages";
 
 interface EditorProps {
   value: string;
   onChange: (value: string) => void;
-  onSave: () => void;
-  fontSize: number;
-  tabSize: number;
-  wordWrap: boolean;
-  scrollFraction: number;
-  onScrollFraction: (fraction: number) => void;
+  onSave: (content: string) => void;
+  fileName: string;
+  /** Position range to select and scroll to (for search navigation) */
+  selection?: { from: number; to: number } | null;
 }
 
 export function Editor({
   value,
   onChange,
   onSave,
-  fontSize,
-  tabSize,
-  wordWrap,
-  scrollFraction,
-  onScrollFraction,
+  fileName,
+  selection,
 }: EditorProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const lineNumbersRef = useRef<HTMLDivElement>(null);
-  const syncingRef = useRef(false);
-  const lineHeight = fontSize * 1.625;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const viewRef = useRef<EditorView | null>(null);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const onSaveRef = useRef(onSave);
+  onSaveRef.current = onSave;
+  const internalChangeRef = useRef(false);
+  const externalValueRef = useRef(value);
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault();
-        onSave();
-      }
-
-      if (e.key === "Tab") {
-        e.preventDefault();
-        const textarea = e.currentTarget;
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const spaces = " ".repeat(tabSize);
-        const newValue =
-          value.substring(0, start) + spaces + value.substring(end);
-        onChange(newValue);
-        requestAnimationFrame(() => {
-          textarea.selectionStart = textarea.selectionEnd =
-            start + spaces.length;
-        });
-      }
-    },
-    [value, onChange, onSave, tabSize],
-  );
-
-  const handleScroll = useCallback(() => {
-    if (!textareaRef.current) return;
-    // Sync line numbers
-    if (lineNumbersRef.current) {
-      lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop;
-    }
-    // Emit scroll fraction (unless this was a programmatic sync)
-    if (!syncingRef.current) {
-      const el = textareaRef.current;
-      const max = el.scrollHeight - el.clientHeight;
-      if (max > 0) onScrollFraction(el.scrollTop / max);
-    }
-  }, [onScrollFraction]);
-
-  // Sync scroll from other pane
   useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-    const max = el.scrollHeight - el.clientHeight;
-    if (max <= 0) return;
-    syncingRef.current = true;
-    el.scrollTop = scrollFraction * max;
-    if (lineNumbersRef.current) {
-      lineNumbersRef.current.scrollTop = el.scrollTop;
-    }
-    requestAnimationFrame(() => {
-      syncingRef.current = false;
+    if (!containerRef.current) return;
+
+    const updateListener = EditorView.updateListener.of((update) => {
+      if (update.docChanged) {
+        internalChangeRef.current = true;
+        onChangeRef.current(update.state.doc.toString());
+      }
     });
-  }, [scrollFraction]);
 
-  const lineCount = value.split("\n").length;
+    const state = EditorState.create({
+      doc: value,
+      extensions: [
+        lineNumbers(),
+        highlightActiveLine(),
+        bracketMatching(),
+        closeBrackets(),
+        indentOnInput(),
+        history(),
+        keymap.of([
+          ...defaultKeymap,
+          ...historyKeymap,
+          {
+            key: "Mod-s",
+            run: (editorView) => {
+              onSaveRef.current(editorView.state.doc.toString());
+              return true;
+            },
+          },
+        ]),
+        syntaxHighlighting(editorHighlight),
+        updateListener,
+        ...(getLanguage(fileName) ? [getLanguage(fileName)!] : []),
+        EditorView.theme(
+          {
+            "&": { height: "100%", backgroundColor: "#262626" },
+            ".cm-scroller": { overflow: "auto" },
+            ".cm-gutters": {
+              backgroundColor: "#262626",
+              borderRight: "1px solid rgba(255,255,255,0.08)",
+              color: "#555",
+            },
+            ".cm-activeLineGutter": { backgroundColor: "#1e1e1e" },
+            ".cm-activeLine": { backgroundColor: "rgba(255,255,255,0.03)" },
+            ".cm-cursor": { borderLeftColor: "#acb2be" },
+            ".cm-selectionBackground": {
+              backgroundColor: "rgba(255,255,255,0.12)",
+            },
+          },
+          { dark: true },
+        ),
+      ],
+    });
 
-  return (
-    <div className="flex h-full bg-card">
-      <div
-        ref={lineNumbersRef}
-        className="flex-shrink-0 w-12 overflow-hidden select-none pt-4 pb-4 bg-card border-r border-border"
-        aria-hidden="true"
-      >
-        {Array.from({ length: lineCount }, (_, i) => (
-          <div
-            key={i}
-            className="text-right pr-3 font-mono text-muted-foreground/50"
-            style={{
-              fontSize: `${fontSize * 0.75}px`,
-              height: `${lineHeight}px`,
-              lineHeight: `${lineHeight}px`,
-            }}
-          >
-            {i + 1}
-          </div>
-        ))}
-      </div>
+    const view = new EditorView({ state, parent: containerRef.current });
+    viewRef.current = view;
+    externalValueRef.current = value;
 
-      <textarea
-        ref={textareaRef}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onScroll={handleScroll}
-        spellCheck={false}
-        className={cn(
-          "flex-1 bg-transparent text-foreground tracking-wide resize-none outline-none border-none p-4 overflow-auto placeholder:text-muted-foreground/30",
-          wordWrap ? "whitespace-pre-wrap break-words" : "whitespace-pre",
-        )}
-        style={{
-          fontSize: `${fontSize}px`,
-          lineHeight: `${lineHeight}px`,
-        }}
-        placeholder="..."
-      />
-    </div>
-  );
+    return () => view.destroy();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileName]);
+
+  useEffect(() => {
+    if (internalChangeRef.current) {
+      internalChangeRef.current = false;
+      return;
+    }
+    const view = viewRef.current;
+    if (!view) return;
+    if (value !== externalValueRef.current) {
+      externalValueRef.current = value;
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: value },
+      });
+      internalChangeRef.current = false;
+    }
+  }, [value]);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view || !selection) return;
+    view.dispatch({
+      selection: { anchor: selection.from, head: selection.to },
+      effects: EditorView.scrollIntoView(selection.from, { y: "center" }),
+    });
+  }, [selection]);
+
+  return <div ref={containerRef} className="h-full" />;
 }

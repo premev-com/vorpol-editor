@@ -1,7 +1,7 @@
 import { useRef, useCallback, useEffect, useMemo } from "react";
 import { flushSync } from "react-dom";
+import { Editor } from "@/components/Editor";
 import { LiveEditor } from "@/components/LiveEditor";
-import { CodeEditor } from "@/components/CodeEditor";
 import { Preview } from "@/components/Preview";
 import { SearchBar, useSearch } from "@/components/SearchBar";
 
@@ -167,7 +167,7 @@ export function EditorArea({
       <div ref={containerRef} className="flex-1 flex overflow-hidden relative">
         {searchBar}
         <div style={{ width: `${splitPosition}%` }} className="h-full">
-          <CodeEditor
+          <Editor
             key={tabId}
             value={content}
             onChange={onChange}
@@ -221,7 +221,7 @@ export function EditorArea({
     <div className="flex-1 flex overflow-hidden relative">
       {searchBar}
       <div className="w-full h-full">
-        <CodeEditor
+        <Editor
           key={tabId}
           value={content}
           onChange={onChange}
