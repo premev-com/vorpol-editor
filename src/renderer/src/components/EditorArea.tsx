@@ -19,6 +19,7 @@ function detectFileKind(fileName: string | null): FileKind {
 }
 
 interface EditorAreaProps {
+  tabId: string;
   fileName: string | null;
   content: string;
   previewHtml?: string;
@@ -37,6 +38,7 @@ interface EditorAreaProps {
 }
 
 export function EditorArea({
+  tabId,
   fileName,
   content,
   previewHtml,
@@ -92,6 +94,7 @@ export function EditorArea({
       <div ref={containerRef} className="flex-1 flex overflow-hidden">
         <div style={{ width: `${splitPosition}%` }} className="h-full">
           <CodeEditor
+            key={tabId}
             value={content}
             onChange={onChange}
             onSave={onSave}
@@ -126,6 +129,7 @@ export function EditorArea({
       <div className="flex-1 flex overflow-hidden">
         <div className="w-full h-full">
           <LiveEditor
+            key={tabId}
             value={content}
             onChange={onChange}
             onSave={onSave}
@@ -141,6 +145,7 @@ export function EditorArea({
     <div className="flex-1 flex overflow-hidden">
       <div className="w-full h-full">
         <CodeEditor
+          key={tabId}
           value={content}
           onChange={onChange}
           onSave={onSave}

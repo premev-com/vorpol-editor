@@ -1,10 +1,4 @@
-import {
-  useState,
-  useCallback,
-  useEffect,
-  useRef,
-  startTransition,
-} from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   Save,
   File,
@@ -439,9 +433,7 @@ function App() {
 
   const handleContentChange = useCallback(
     (content: string) => {
-      startTransition(() => {
-        updateActiveTab({ content });
-      });
+      updateActiveTab({ content });
     },
     [updateActiveTab],
   );
@@ -584,6 +576,7 @@ function App() {
       />
 
       <EditorArea
+        tabId={activeTab.id}
         fileName={activeTab.fileName}
         content={activeTab.content}
         previewHtml={activeTab.previewHtml}

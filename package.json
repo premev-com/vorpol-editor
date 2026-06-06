@@ -17,7 +17,7 @@
     },
     "publish": {
       "provider": "generic",
-      "url": "https://api.example.com/updates"
+      "url": "https://api.vorpol.premev.com/api/updates"
     },
     "fileAssociations": [
       {
