@@ -37,6 +37,91 @@
         "name": "Word Document",
         "description": "Microsoft Word Document",
         "role": "Editor"
+      },
+      {
+        "ext": [
+          "js",
+          "jsx",
+          "mjs",
+          "cjs",
+          "ts",
+          "tsx",
+          "py",
+          "pyw",
+          "rs",
+          "go",
+          "java",
+          "c",
+          "cpp",
+          "cc",
+          "cxx",
+          "h",
+          "hpp",
+          "cs",
+          "rb",
+          "php",
+          "swift",
+          "kt",
+          "scala",
+          "lua",
+          "r",
+          "sql"
+        ],
+        "name": "Source Code",
+        "description": "Source Code File",
+        "role": "Editor"
+      },
+      {
+        "ext": [
+          "html",
+          "htm",
+          "css",
+          "scss",
+          "less",
+          "vue",
+          "svelte",
+          "astro"
+        ],
+        "name": "Web File",
+        "description": "Web Document",
+        "role": "Editor"
+      },
+      {
+        "ext": [
+          "json",
+          "jsonc",
+          "yaml",
+          "yml",
+          "toml",
+          "xml",
+          "ini",
+          "cfg",
+          "conf",
+          "env",
+          "graphql",
+          "gql",
+          "prisma",
+          "proto"
+        ],
+        "name": "Config / Data File",
+        "description": "Configuration or Data File",
+        "role": "Editor"
+      },
+      {
+        "ext": [
+          "sh",
+          "bash",
+          "zsh",
+          "fish",
+          "ps1",
+          "bat",
+          "cmd",
+          "dockerfile",
+          "gitignore"
+        ],
+        "name": "Script File",
+        "description": "Shell or Batch Script",
+        "role": "Editor"
       }
     ],
     "win": {
