@@ -28,7 +28,6 @@ import { yaml } from "@codemirror/lang-yaml";
 import { xml } from "@codemirror/lang-xml";
 import { closeBrackets } from "@codemirror/autocomplete";
 
-// Subtle accented syntax — muted red, green, yellow, white
 const monoHighlight = HighlightStyle.define([
   { tag: tags.keyword, color: "#d4a574" },
   { tag: tags.controlKeyword, color: "#d4a574" },
@@ -59,6 +58,7 @@ const monoHighlight = HighlightStyle.define([
 interface CodeEditorProps {
   value: string;
   onChange: (value: string) => void;
+  onSave: (content: string) => void;
   fileName: string;
 }
 
@@ -96,19 +96,28 @@ function getLanguage(fileName: string) {
   return langByExt[ext]?.() ?? undefined;
 }
 
-export function CodeEditor({ value, onChange, fileName }: CodeEditorProps) {
+export function CodeEditor({
+  value,
+  onChange,
+  onSave,
+  fileName,
+}: CodeEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const onSaveRef = useRef(onSave);
+  onSaveRef.current = onSave;
+  const internalChangeRef = useRef(false);
+  const externalValueRef = useRef(value);
 
+  // Create / recreate CodeMirror view when the file identity changes
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const lang = getLanguage(fileName);
-
     const updateListener = EditorView.updateListener.of((update) => {
       if (update.docChanged) {
+        internalChangeRef.current = true;
         onChangeRef.current(update.state.doc.toString());
       }
     });
@@ -122,10 +131,20 @@ export function CodeEditor({ value, onChange, fileName }: CodeEditorProps) {
         closeBrackets(),
         indentOnInput(),
         history(),
-        keymap.of([...defaultKeymap, ...historyKeymap]),
+        keymap.of([
+          ...defaultKeymap,
+          ...historyKeymap,
+          {
+            key: "Mod-s",
+            run: (editorView) => {
+              onSaveRef.current(editorView.state.doc.toString());
+              return true;
+            },
+          },
+        ]),
         syntaxHighlighting(monoHighlight),
         updateListener,
-        ...(lang ? [lang] : []),
+        ...(getLanguage(fileName) ? [getLanguage(fileName)!] : []),
         EditorView.theme(
           {
             "&": { height: "100%", backgroundColor: "#262626" },
@@ -149,14 +168,24 @@ export function CodeEditor({ value, onChange, fileName }: CodeEditorProps) {
 
     const view = new EditorView({ state, parent: containerRef.current });
     viewRef.current = view;
+    externalValueRef.current = value;
+
     return () => view.destroy();
+    // Only recreate when file identity changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileName]);
 
+  // Sync external value changes (tab switch, file open) into CodeMirror.
+  // Skips internal changes (user typing) to avoid expensive toString() calls.
   useEffect(() => {
+    if (internalChangeRef.current) {
+      internalChangeRef.current = false;
+      return;
+    }
     const view = viewRef.current;
     if (!view) return;
-    const current = view.state.doc.toString();
-    if (current !== value) {
+    if (value !== externalValueRef.current) {
+      externalValueRef.current = value;
       view.dispatch({
         changes: { from: 0, to: view.state.doc.length, insert: value },
       });

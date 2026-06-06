@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, webUtils } from "electron";
 
 interface FileResult {
   path: string;
@@ -11,6 +11,9 @@ interface FileResult {
 contextBridge.exposeInMainWorld("electronAPI", {
   ready: () => ipcRenderer.invoke("renderer:ready"),
   openFile: () => ipcRenderer.invoke("file:open"),
+  openPath: (filePath: string) => ipcRenderer.invoke("file:openPath", filePath),
+  // Resolve the native filesystem path of a dropped File object
+  getFilePath: (file: File) => webUtils.getPathForFile(file),
   saveFile: (filePath: string, content: string) =>
     ipcRenderer.invoke("file:save", { filePath, content }),
   saveAs: (content: string) => ipcRenderer.invoke("file:saveAs", { content }),

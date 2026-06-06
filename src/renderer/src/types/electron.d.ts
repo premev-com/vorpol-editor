@@ -21,6 +21,8 @@ interface DownloadProgress {
 interface ElectronAPI {
   ready: () => Promise<FileResult | null>;
   openFile: () => Promise<FileResult | null>;
+  openPath: (filePath: string) => Promise<FileResult | null>;
+  getFilePath: (file: File) => string;
   saveFile: (filePath: string, content: string) => Promise<boolean>;
   saveAs: (content: string) => Promise<SaveAsResult | null>;
   onOpenExternal: (callback: (file: FileResult) => void) => () => void;

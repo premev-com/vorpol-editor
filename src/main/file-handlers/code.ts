@@ -1,5 +1,5 @@
 import { basename } from "path";
-import * as fs from "fs";
+import { promises as fs } from "fs";
 import type { FileHandler, FileResult } from "./types";
 
 import { CODE_EXTENSIONS } from "../../shared/extensions";
@@ -10,7 +10,7 @@ export const codeHandler: FileHandler = {
   extensions: codeExtensions,
 
   async read(filePath: string): Promise<FileResult> {
-    const content = fs.readFileSync(filePath, "utf-8");
+    const content = await fs.readFile(filePath, "utf-8");
     return {
       path: filePath,
       name: basename(filePath),

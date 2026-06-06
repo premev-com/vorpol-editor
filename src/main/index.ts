@@ -120,6 +120,16 @@ ipcMain.handle("renderer:ready", async () => {
   }
 });
 
+/** Open a file by absolute path; used by drag-and-drop in the renderer. */
+ipcMain.handle("file:openPath", async (_, filePath: string) => {
+  try {
+    return await readFile(filePath);
+  } catch (err) {
+    console.error(`Failed to read ${filePath}:`, err);
+    return null;
+  }
+});
+
 // Window controls for frameless title bar
 ipcMain.on("window:minimize", () => mainWindow?.minimize());
 ipcMain.on("window:maximize", () => {

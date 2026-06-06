@@ -1,12 +1,9 @@
 import { useRef, useCallback, useEffect } from "react";
-import { Editor } from "@/components/Editor";
 import { LiveEditor } from "@/components/LiveEditor";
 import { CodeEditor } from "@/components/CodeEditor";
 import { Preview } from "@/components/Preview";
 
 import { CODE_EXTENSIONS, FILE_KIND_MAP } from "@shared/extensions";
-
-// -- File-type helpers --------------------------------------------------
 
 type FileKind = "markdown" | "text" | "word" | "code" | "unknown";
 
@@ -21,15 +18,13 @@ function detectFileKind(fileName: string | null): FileKind {
   return codeExts.has(ext ?? "") ? "code" : "unknown";
 }
 
-// -- Props ----------------------------------------------------------------
-
 interface EditorAreaProps {
   fileName: string | null;
   content: string;
   previewHtml?: string;
   previewKind?: "markdown" | "docx" | "code";
   onChange: (content: string) => void;
-  onSave: () => void;
+  onSave: (content: string) => void;
   editorFontSize: number;
   previewFontSize: number;
   tabSize: number;
@@ -41,8 +36,6 @@ interface EditorAreaProps {
   onScrollFraction: (fraction: number) => void;
 }
 
-// -- Component ------------------------------------------------------------
-
 export function EditorArea({
   fileName,
   content,
@@ -50,10 +43,10 @@ export function EditorArea({
   previewKind,
   onChange,
   onSave,
-  editorFontSize,
+  editorFontSize: _editorFontSize,
   previewFontSize,
-  tabSize,
-  wordWrap,
+  tabSize: _tabSize,
+  wordWrap: _wordWrap,
   previewVisible,
   splitPosition,
   onSplitPositionChange,
@@ -66,8 +59,6 @@ export function EditorArea({
   const fileKind = detectFileKind(fileName);
   const showPreview =
     (fileKind === "markdown" && previewVisible) || !!previewHtml;
-
-  // -- Split pane drag ----------------------------------------------------
 
   const handleMouseDown = useCallback(() => {
     isDragging.current = true;
@@ -95,50 +86,44 @@ export function EditorArea({
     };
   }, []);
 
-  // -- Render editors based on file kind ----------------------------------
+  // Markdown split: CodeMirror source + rendered preview
+  if (showPreview) {
+    return (
+      <div ref={containerRef} className="flex-1 flex overflow-hidden">
+        <div style={{ width: `${splitPosition}%` }} className="h-full">
+          <CodeEditor
+            value={content}
+            onChange={onChange}
+            onSave={onSave}
+            fileName={fileName ?? "untitled.md"}
+          />
+        </div>
 
-  const noopScroll = () => {};
+        <div
+          className="w-1.5 flex-shrink-0 cursor-col-resize relative group"
+          onMouseDown={handleMouseDown}
+        >
+          <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-border group-hover:bg-primary/50 transition-colors" />
+        </div>
 
-  return (
-    <div ref={containerRef} className="flex-1 flex overflow-hidden">
-      {/* Split: raw editor + preview (markdown with preview on) */}
-      {showPreview && (
-        <>
-          <div style={{ width: `${splitPosition}%` }} className="h-full">
-            <Editor
-              value={content}
-              onChange={onChange}
-              onSave={onSave}
-              fontSize={editorFontSize}
-              tabSize={tabSize}
-              wordWrap={wordWrap}
-              scrollFraction={scrollFraction}
-              onScrollFraction={onScrollFraction}
-            />
-          </div>
+        <div style={{ width: `${100 - splitPosition}%` }} className="h-full">
+          <Preview
+            content={content}
+            previewHtml={previewHtml}
+            previewKind={previewKind}
+            fontSize={previewFontSize}
+            scrollFraction={scrollFraction}
+            onScrollFraction={onScrollFraction}
+          />
+        </div>
+      </div>
+    );
+  }
 
-          <div
-            className="w-1.5 flex-shrink-0 cursor-col-resize relative group"
-            onMouseDown={handleMouseDown}
-          >
-            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-border group-hover:bg-primary/50 transition-colors" />
-          </div>
-
-          <div style={{ width: `${100 - splitPosition}%` }} className="h-full">
-            <Preview
-              content={content}
-              previewHtml={previewHtml}
-              previewKind={previewKind}
-              fontSize={previewFontSize}
-              scrollFraction={scrollFraction}
-              onScrollFraction={onScrollFraction}
-            />
-          </div>
-        </>
-      )}
-
-      {/* Live editor: formatted markdown with click-to-edit */}
-      {!showPreview && fileKind === "markdown" && (
+  // Live markdown editor (formatted, click-to-edit)
+  if (fileKind === "markdown") {
+    return (
+      <div className="flex-1 flex overflow-hidden">
         <div className="w-full h-full">
           <LiveEditor
             value={content}
@@ -147,34 +132,21 @@ export function EditorArea({
             fontSize={previewFontSize}
           />
         </div>
-      )}
+      </div>
+    );
+  }
 
-      {/* Code editor: syntax-highlighted, no preview */}
-      {!showPreview && fileKind === "code" && (
-        <div className="w-full h-full">
-          <CodeEditor
-            value={content}
-            onChange={onChange}
-            fileName={fileName ?? "untitled"}
-          />
-        </div>
-      )}
-
-      {/* Plain editor: for .txt and unknown types */}
-      {!showPreview && fileKind !== "markdown" && fileKind !== "code" && (
-        <div className="w-full h-full">
-          <Editor
-            value={content}
-            onChange={onChange}
-            onSave={onSave}
-            fontSize={editorFontSize}
-            tabSize={tabSize}
-            wordWrap={wordWrap}
-            scrollFraction={scrollFraction}
-            onScrollFraction={noopScroll}
-          />
-        </div>
-      )}
+  // Everything else (code, text, unknown): CodeMirror with viewport rendering
+  return (
+    <div className="flex-1 flex overflow-hidden">
+      <div className="w-full h-full">
+        <CodeEditor
+          value={content}
+          onChange={onChange}
+          onSave={onSave}
+          fileName={fileName ?? "untitled"}
+        />
+      </div>
     </div>
   );
 }

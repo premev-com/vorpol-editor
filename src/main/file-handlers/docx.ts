@@ -1,5 +1,5 @@
 import { basename } from "path";
-import * as fs from "fs";
+import { promises as fs } from "fs";
 import type { FileHandler, FileResult } from "./types";
 
 let _mammoth: typeof import("mammoth") | null = null;
@@ -15,7 +15,7 @@ export const docxHandler: FileHandler = {
 
   async read(filePath: string): Promise<FileResult> {
     const m = getMammoth();
-    const buffer = fs.readFileSync(filePath);
+    const buffer = await fs.readFile(filePath);
     const [textResult, htmlResult] = await Promise.all([
       m.extractRawText({ buffer }),
       m.convertToHtml(

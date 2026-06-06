@@ -1,4 +1,10 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  startTransition,
+} from "react";
 import {
   Save,
   File,
@@ -16,8 +22,13 @@ import { Menubar } from "@/components/Menubar";
 import { TitleBar } from "@/components/TitleBar";
 import { EditorArea } from "@/components/EditorArea";
 import { SettingsModal } from "@/components/settings/SettingsModal";
+import { firstLine } from "@/lib/large-content";
 
-import { DEFAULT_SETTINGS, type EditorSettings, type UpdateStatus } from "@/types/settings";
+import {
+  DEFAULT_SETTINGS,
+  type EditorSettings,
+  type UpdateStatus,
+} from "@/types/settings";
 
 const SETTINGS_KEY = "vorpol-settings";
 
@@ -155,11 +166,16 @@ function App() {
   }, [settings.autoSave, settings.persistUntitled]);
 
   // Persist ALL modified tabs to temp (debounced, 1s)
+  // Skip files larger than ~1 MB to avoid I/O overhead from large temp writes
   useEffect(() => {
     if (!settings.autoSave || !settings.persistUntitled) return;
     const timer = setTimeout(() => {
       for (const tab of tabs) {
-        if (tab.content && tab.savedContent !== tab.content) {
+        if (
+          tab.content &&
+          tab.savedContent !== tab.content &&
+          tab.content.length < 1_000_000
+        ) {
           window.electronAPI.tempSave(tab.id, tab.content);
         }
       }
@@ -190,6 +206,63 @@ function App() {
     }, 2000);
     return () => clearTimeout(timer);
   }, [activeTab.content, settings.autoSave]);
+
+  // Drag-and-drop: intercept file drops before CodeMirror consumes them.
+  // Uses capture phase (third arg = true) so we fire BEFORE the target element.
+  useEffect(() => {
+    const onDragOver = (e: DragEvent) => {
+      // Check both files.length and items for maximum compatibility
+      const hasFiles =
+        (e.dataTransfer?.files?.length ?? 0) > 0 ||
+        Array.from(e.dataTransfer?.items ?? []).some(
+          (item) => item.kind === "file",
+        );
+      if (!hasFiles) return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    const onDrop = (e: DragEvent) => {
+      const files = e.dataTransfer?.files;
+      if (!files || files.length === 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]!;
+        // file.path is the legacy Electron property; getFilePath is the modern API
+        const filePath: string =
+          (file as any).path || window.electronAPI.getFilePath(file);
+        if (!filePath) continue;
+
+        window.electronAPI
+          .openPath(filePath)
+          .then((result) => {
+            if (!result) return;
+            const newTab = createTab({
+              filePath: result.path,
+              fileName: result.name,
+              content: result.content,
+              savedContent: result.content,
+              previewHtml: result.previewHtml,
+              previewKind: result.previewKind,
+            });
+            setTabs((prev) => [...prev, newTab]);
+            setActiveTabId(newTab.id);
+          })
+          .catch((err) => {
+            console.error("[dnd] openPath failed:", err);
+          });
+      }
+    };
+
+    window.addEventListener("dragover", onDragOver, true);
+    window.addEventListener("drop", onDrop, true);
+    return () => {
+      window.removeEventListener("dragover", onDragOver, true);
+      window.removeEventListener("drop", onDrop, true);
+    };
+  }, []);
 
   // Listen for externally opened files (double-click in explorer, etc.)
   useEffect(() => {
@@ -305,32 +378,35 @@ function App() {
     }
   }, []);
 
-  const handleSave = useCallback(async () => {
-    const tab = tabs.find((t) => t.id === activeTabId);
-    if (!tab) return;
+  const handleSave = useCallback(
+    async (content: string) => {
+      const tab = tabs.find((t) => t.id === activeTabId);
+      if (!tab) return;
 
-    let filePath = tab.filePath;
+      let filePath = tab.filePath;
 
-    // .docx files can't be saved in-place — the extracted text would corrupt them
-    if (filePath && filePath.toLowerCase().endsWith(".docx")) {
-      filePath = null;
-    }
+      // .docx files can't be saved in-place - the extracted text would corrupt them
+      if (filePath && filePath.toLowerCase().endsWith(".docx")) {
+        filePath = null;
+      }
 
-    if (!filePath) {
-      const result = await window.electronAPI.saveAs(tab.content);
-      if (!result) return;
-      filePath = result.path;
-      updateActiveTab({ filePath: result.path, fileName: result.name });
-    }
+      if (!filePath) {
+        const result = await window.electronAPI.saveAs(content);
+        if (!result) return;
+        filePath = result.path;
+        updateActiveTab({ filePath: result.path, fileName: result.name });
+      }
 
-    try {
-      await window.electronAPI.saveFile(filePath, tab.content);
-      updateActiveTab({ savedContent: tab.content });
-      window.electronAPI.tempDelete(tab.id);
-    } catch (err) {
-      console.error("Save failed:", err);
-    }
-  }, [tabs, activeTabId, updateActiveTab]);
+      try {
+        await window.electronAPI.saveFile(filePath, content);
+        updateActiveTab({ savedContent: content });
+        window.electronAPI.tempDelete(tab.id);
+      } catch (err) {
+        console.error("Save failed:", err);
+      }
+    },
+    [tabs, activeTabId, updateActiveTab],
+  );
 
   // -- Tab management ------------------------------------------------------
 
@@ -363,7 +439,9 @@ function App() {
 
   const handleContentChange = useCallback(
     (content: string) => {
-      updateActiveTab({ content });
+      startTransition(() => {
+        updateActiveTab({ content });
+      });
     },
     [updateActiveTab],
   );
@@ -384,7 +462,7 @@ function App() {
           break;
         case "s":
           e.preventDefault();
-          handleSave();
+          handleSave(activeTab.content);
           break;
       }
     };
@@ -417,7 +495,7 @@ function App() {
           icon: Save,
           shortcut: "Ctrl+S",
           disabled: !activeTab.filePath && !activeTab.content,
-          onClick: handleSave,
+          onClick: () => handleSave(activeTab.content),
         },
       ],
     },
@@ -483,11 +561,7 @@ function App() {
     <div className="h-screen flex flex-col bg-background">
       <TitleBar
         tabs={tabs.map((t) => {
-          const displayName = t.filePath
-            ? t.fileName
-            : t.content.trim()
-              ? t.content.split("\n")[0]!.trim().slice(0, 40) || "Untitled"
-              : "Untitled";
+          const displayName = t.filePath ? t.fileName : firstLine(t.content);
           return {
             id: t.id,
             fileName: displayName,
@@ -498,7 +572,7 @@ function App() {
         onSelectTab={setActiveTabId}
         onCloseTab={handleCloseTab}
         onNewTab={handleNewTab}
-        onSave={handleSave}
+        onSave={() => handleSave(activeTab.content)}
       />
 
       <Menubar
