@@ -1,7 +1,9 @@
-import { useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect, useMemo } from "react";
+import { flushSync } from "react-dom";
 import { LiveEditor } from "@/components/LiveEditor";
 import { CodeEditor } from "@/components/CodeEditor";
 import { Preview } from "@/components/Preview";
+import { SearchBar, useSearch } from "@/components/SearchBar";
 
 import { CODE_EXTENSIONS, FILE_KIND_MAP } from "@shared/extensions";
 
@@ -26,6 +28,7 @@ interface EditorAreaProps {
   previewKind?: "markdown" | "docx" | "code";
   onChange: (content: string) => void;
   onSave: (content: string) => void;
+  onReplaceCommit: () => void;
   editorFontSize: number;
   previewFontSize: number;
   tabSize: number;
@@ -35,6 +38,8 @@ interface EditorAreaProps {
   onSplitPositionChange: (pos: number) => void;
   scrollFraction: number;
   onScrollFraction: (fraction: number) => void;
+  searchOpen: boolean;
+  onSearchClose: () => void;
 }
 
 export function EditorArea({
@@ -45,6 +50,7 @@ export function EditorArea({
   previewKind,
   onChange,
   onSave,
+  onReplaceCommit,
   editorFontSize: _editorFontSize,
   previewFontSize,
   tabSize: _tabSize,
@@ -54,6 +60,8 @@ export function EditorArea({
   onSplitPositionChange,
   scrollFraction,
   onScrollFraction,
+  searchOpen,
+  onSearchClose,
 }: EditorAreaProps) {
   const isDragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -61,6 +69,17 @@ export function EditorArea({
   const fileKind = detectFileKind(fileName);
   const showPreview =
     (fileKind === "markdown" && previewVisible) || !!previewHtml;
+
+  const search = useSearch(content);
+
+  // Active match as a selection range for CodeMirror
+  const selection = useMemo(() => {
+    if (!search.activeMatch || !searchOpen) return null;
+    return {
+      from: search.activeMatch.index,
+      to: search.activeMatch.index + search.activeMatch.length,
+    };
+  }, [search.activeMatch, searchOpen]);
 
   const handleMouseDown = useCallback(() => {
     isDragging.current = true;
@@ -88,10 +107,65 @@ export function EditorArea({
     };
   }, []);
 
+  // Replace the active match — normalize content to match search indices
+  const handleReplace = useCallback(() => {
+    if (!search.activeMatch) return;
+    const { index, length } = search.activeMatch;
+    const text = content.replace(/\r\n/g, "\n");
+    const newContent =
+      text.slice(0, index) + search.replace + text.slice(index + length);
+    // Only update content (not savedContent) so the modified indicator shows.
+    // onReplaceCommit marks a flag to skip one auto-save cycle.
+    flushSync(() => {
+      onChange(newContent);
+      onReplaceCommit();
+    });
+  }, [content, search.activeMatch, search.replace, onChange, onReplaceCommit]);
+
+  // Replace all matches
+  const handleReplaceAll = useCallback(() => {
+    if (search.matches.length === 0) return;
+    const sorted = [...search.matches].sort((a, b) => b.index - a.index);
+    let result = content.replace(/\r\n/g, "\n");
+    for (const m of sorted) {
+      result =
+        result.slice(0, m.index) +
+        search.replace +
+        result.slice(m.index + m.length);
+    }
+    flushSync(() => {
+      onChange(result);
+      onReplaceCommit();
+    });
+  }, [content, search.matches, search.replace, onChange, onReplaceCommit]);
+
+  const searchBar = (
+    <SearchBar
+      open={searchOpen}
+      query={search.query}
+      onQueryChange={search.setQuery}
+      replace={search.replace}
+      onReplaceChange={search.setReplace}
+      caseSensitive={search.caseSensitive}
+      onCaseSensitiveChange={search.setCaseSensitive}
+      matchCount={search.matches.length}
+      activeIndex={search.activeIndex}
+      onNext={search.goNext}
+      onPrev={search.goPrev}
+      onReplace={handleReplace}
+      onReplaceAll={handleReplaceAll}
+      onClose={() => {
+        search.reset();
+        onSearchClose();
+      }}
+    />
+  );
+
   // Markdown split: CodeMirror source + rendered preview
   if (showPreview) {
     return (
-      <div ref={containerRef} className="flex-1 flex overflow-hidden">
+      <div ref={containerRef} className="flex-1 flex overflow-hidden relative">
+        {searchBar}
         <div style={{ width: `${splitPosition}%` }} className="h-full">
           <CodeEditor
             key={tabId}
@@ -99,6 +173,7 @@ export function EditorArea({
             onChange={onChange}
             onSave={onSave}
             fileName={fileName ?? "untitled.md"}
+            selection={selection}
           />
         </div>
 
@@ -126,7 +201,8 @@ export function EditorArea({
   // Live markdown editor (formatted, click-to-edit)
   if (fileKind === "markdown") {
     return (
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
+        {searchBar}
         <div className="w-full h-full">
           <LiveEditor
             key={tabId}
@@ -142,7 +218,8 @@ export function EditorArea({
 
   // Everything else (code, text, unknown): CodeMirror with viewport rendering
   return (
-    <div className="flex-1 flex overflow-hidden">
+    <div className="flex-1 flex overflow-hidden relative">
+      {searchBar}
       <div className="w-full h-full">
         <CodeEditor
           key={tabId}
@@ -150,6 +227,7 @@ export function EditorArea({
           onChange={onChange}
           onSave={onSave}
           fileName={fileName ?? "untitled"}
+          selection={selection}
         />
       </div>
     </div>

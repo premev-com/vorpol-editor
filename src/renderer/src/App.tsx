@@ -81,6 +81,8 @@ function App() {
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
   const [currentVersion, setCurrentVersion] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const replaceRef = useRef(false);
 
   // Persist settings to localStorage
   useEffect(() => {
@@ -192,6 +194,10 @@ function App() {
   // Auto-save files with a path (debounced, 2s)
   useEffect(() => {
     if (!settings.autoSave || !activeTab.filePath || !isModified) return;
+    if (replaceRef.current) {
+      replaceRef.current = false;
+      return;
+    }
     const timer = setTimeout(() => {
       window.electronAPI
         .saveFile(activeTab.filePath!, activeTab.content)
@@ -316,13 +322,17 @@ function App() {
 
   // -- Helpers -------------------------------------------------------------
 
+  const updateTab = useCallback((tabId: string, patch: Partial<Tab>) => {
+    setTabs((prev) =>
+      prev.map((t) => (t.id === tabId ? { ...t, ...patch } : t)),
+    );
+  }, []);
+
   const updateActiveTab = useCallback(
     (patch: Partial<Tab>) => {
-      setTabs((prev) =>
-        prev.map((t) => (t.id === activeTabId ? { ...t, ...patch } : t)),
-      );
+      updateTab(activeTabId, patch);
     },
-    [activeTabId],
+    [activeTabId, updateTab],
   );
 
   // -- File operations -----------------------------------------------------
@@ -438,6 +448,11 @@ function App() {
     [updateActiveTab],
   );
 
+  // After replace, skip one auto-save cycle but keep modified indicator visible
+  const handleReplaceCommit = useCallback(() => {
+    replaceRef.current = true;
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -455,6 +470,10 @@ function App() {
         case "s":
           e.preventDefault();
           handleSave(activeTab.content);
+          break;
+        case "f":
+          e.preventDefault();
+          setSearchOpen((v) => !v);
           break;
       }
     };
@@ -583,6 +602,7 @@ function App() {
         previewKind={activeTab.previewKind}
         onChange={handleContentChange}
         onSave={handleSave}
+        onReplaceCommit={handleReplaceCommit}
         editorFontSize={settings.editorFontSize}
         previewFontSize={settings.previewFontSize}
         tabSize={settings.tabSize}
@@ -592,6 +612,8 @@ function App() {
         onSplitPositionChange={setSplitPosition}
         scrollFraction={scrollFraction}
         onScrollFraction={settings.syncScroll ? setScrollFraction : () => {}}
+        searchOpen={searchOpen}
+        onSearchClose={() => setSearchOpen(false)}
       />
 
       <SettingsModal

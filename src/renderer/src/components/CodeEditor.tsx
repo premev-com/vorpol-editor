@@ -60,6 +60,8 @@ interface CodeEditorProps {
   onChange: (value: string) => void;
   onSave: (content: string) => void;
   fileName: string;
+  /** Position range to select and scroll to (for search navigation) */
+  selection?: { from: number; to: number } | null;
 }
 
 const langByExt: Record<string, () => ReturnType<typeof javascript>> = {
@@ -101,6 +103,7 @@ export function CodeEditor({
   onChange,
   onSave,
   fileName,
+  selection,
 }: CodeEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -111,7 +114,6 @@ export function CodeEditor({
   const internalChangeRef = useRef(false);
   const externalValueRef = useRef(value);
 
-  // Create / recreate CodeMirror view when the file identity changes
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -171,12 +173,9 @@ export function CodeEditor({
     externalValueRef.current = value;
 
     return () => view.destroy();
-    // Only recreate when file identity changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileName]);
 
-  // Sync external value changes (tab switch, file open) into CodeMirror.
-  // Skips internal changes (user typing) to avoid expensive toString() calls.
   useEffect(() => {
     if (internalChangeRef.current) {
       internalChangeRef.current = false;
@@ -189,8 +188,21 @@ export function CodeEditor({
       view.dispatch({
         changes: { from: 0, to: view.state.doc.length, insert: value },
       });
+      // The dispatch above fires updateListener synchronously, which sets
+      // internalChangeRef = true. Reset it so the NEXT external change syncs.
+      internalChangeRef.current = false;
     }
   }, [value]);
+
+  // Select and center the search match in the viewport
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view || !selection) return;
+    view.dispatch({
+      selection: { anchor: selection.from, head: selection.to },
+      effects: EditorView.scrollIntoView(selection.from, { y: "center" }),
+    });
+  }, [selection]);
 
   return <div ref={containerRef} className="h-full" />;
 }
