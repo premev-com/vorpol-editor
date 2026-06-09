@@ -54,7 +54,7 @@ export function EditorArea({
   editorFontSize: _editorFontSize,
   previewFontSize,
   tabSize: _tabSize,
-  wordWrap: _wordWrap,
+  wordWrap,
   previewVisible,
   splitPosition,
   onSplitPositionChange,
@@ -173,6 +173,7 @@ export function EditorArea({
             onChange={onChange}
             onSave={onSave}
             fileName={fileName ?? "untitled.md"}
+            wordWrap={wordWrap}
             selection={selection}
           />
         </div>
@@ -210,6 +211,7 @@ export function EditorArea({
             onChange={onChange}
             onSave={onSave}
             fontSize={previewFontSize}
+            wordWrap={wordWrap}
           />
         </div>
       </div>
@@ -227,6 +229,7 @@ export function EditorArea({
           onChange={onChange}
           onSave={onSave}
           fileName={fileName ?? "untitled"}
+          wordWrap={wordWrap}
           selection={selection}
         />
       </div>

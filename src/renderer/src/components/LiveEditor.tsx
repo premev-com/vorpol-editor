@@ -455,6 +455,7 @@ interface LiveEditorProps {
   onChange: (value: string) => void;
   onSave: (content: string) => void;
   fontSize: number;
+  wordWrap: boolean;
 }
 
 export const LiveEditor = memo(function LiveEditor({
@@ -462,6 +463,7 @@ export const LiveEditor = memo(function LiveEditor({
   onChange,
   onSave,
   fontSize,
+  wordWrap,
 }: LiveEditorProps) {
   const [editingLine, setEditingLine] = useState<number | null>(null);
   const [scrollTop, setScrollTop] = useState(0);
@@ -580,7 +582,7 @@ export const LiveEditor = memo(function LiveEditor({
       className="h-full overflow-auto bg-card"
     >
       <div
-        className="max-w-3xl mx-auto font-serif"
+        className={`max-w-3xl mx-auto font-serif${wordWrap ? " wrap-break-word" : ""}`}
         style={{ fontSize: `${fontSize}px`, lineHeight: "1.75" }}
       >
         <div style={{ height: `${totalHeight}px`, position: "relative" }}>

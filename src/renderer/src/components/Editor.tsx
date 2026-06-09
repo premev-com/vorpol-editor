@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { EditorState } from "@codemirror/state";
+import { Compartment, EditorState } from "@codemirror/state";
 import {
   EditorView,
   keymap,
@@ -20,6 +20,7 @@ interface EditorProps {
   onChange: (value: string) => void;
   onSave: (content: string) => void;
   fileName: string;
+  wordWrap: boolean;
   /** Position range to select and scroll to (for search navigation) */
   selection?: { from: number; to: number } | null;
 }
@@ -29,6 +30,7 @@ export function Editor({
   onChange,
   onSave,
   fileName,
+  wordWrap,
   selection,
 }: EditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -39,6 +41,7 @@ export function Editor({
   onSaveRef.current = onSave;
   const internalChangeRef = useRef(false);
   const externalValueRef = useRef(value);
+  const wordWrapCompartment = useRef(new Compartment());
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -72,6 +75,7 @@ export function Editor({
         ]),
         syntaxHighlighting(editorHighlight),
         updateListener,
+        wordWrapCompartment.current.of(wordWrap ? EditorView.lineWrapping : []),
         ...(getLanguage(fileName) ? [getLanguage(fileName)!] : []),
         EditorView.theme(
           {
@@ -101,6 +105,17 @@ export function Editor({
     return () => view.destroy();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileName]);
+
+  // Toggle word wrap dynamically without recreating the editor
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: wordWrapCompartment.current.reconfigure(
+        wordWrap ? EditorView.lineWrapping : [],
+      ),
+    });
+  }, [wordWrap]);
 
   useEffect(() => {
     if (internalChangeRef.current) {
