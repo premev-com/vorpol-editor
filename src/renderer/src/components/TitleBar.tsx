@@ -52,7 +52,7 @@ export function TitleBar({
               onClick={() => onSelectTab(tab.id)}
               style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
               className={cn(
-                "group relative h-8 flex items-center gap-1.5 pl-3 pr-2 text-xs border-r border-border transition-colors flex-1 min-w-15 mt-auto",
+                "group relative h-8 flex items-center gap-1.5 pl-3 pr-2 text-xs border-r border-border transition-colors flex-1 min-w-15 max-w-30 mt-auto",
                 active
                   ? "bg-background text-foreground"
                   : "bg-transparent text-muted-foreground hover:bg-accent/50",
@@ -74,7 +74,7 @@ export function TitleBar({
                 }}
                 style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
                 className={cn(
-                  "flex-shrink-0 p-0.5 rounded-sm opacity-0 group-hover:opacity-100 hover:bg-border transition-opacity",
+                  "ml-auto flex-shrink-0 p-0.5 rounded-sm opacity-0 group-hover:opacity-100 hover:bg-border transition-opacity",
                   active && "opacity-50",
                 )}
                 title="Close tab"
