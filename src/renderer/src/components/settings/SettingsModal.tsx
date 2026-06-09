@@ -141,6 +141,12 @@ export function SettingsModal({
                 onChange={(v) => update({ persistUntitled: v })}
               />
             </SettingRow>
+            <SettingRow label="Continue where you left off">
+              <Toggle
+                checked={settings.continueSession}
+                onChange={(v) => update({ continueSession: v })}
+              />
+            </SettingRow>
           </section>
 
           <section className="space-y-3">

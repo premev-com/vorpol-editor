@@ -67,6 +67,21 @@ function createTab(partial?: Partial<Tab>): Tab {
   };
 }
 
+interface SessionTab {
+  id: string;
+  filePath: string | null;
+  fileName: string;
+  content: string;
+  savedContent: string;
+  previewHtml?: string;
+  previewKind?: string;
+}
+
+interface SessionData {
+  tabs: SessionTab[];
+  activeTabId: string;
+}
+
 // -- App -------------------------------------------------------------------
 
 function App() {
@@ -134,24 +149,55 @@ function App() {
   const showPreview = (isMarkdown && previewVisible) || !!activeTab.previewHtml;
   const restoredRef = useRef(false);
 
-  // Restore unsaved tabs from temp on startup (runs once)
+  // Restore session or unsaved tabs on startup (runs once)
   useEffect(() => {
     if (restoredRef.current) return;
     restoredRef.current = true;
 
-    window.electronAPI.tempList().then((entries) => {
-      if (entries.length === 0) return;
-      const restored: Tab[] = entries.map((e) =>
-        createTab({
-          id: e.tabId,
-          content: e.content,
-          savedContent: "",
-        }),
-      );
-      setTabs(restored);
-      setActiveTabId(restored[0]!.id);
-      window.electronAPI.tempClear();
-    });
+    const restoreTemp = () => {
+      window.electronAPI.tempList().then((entries) => {
+        if (entries.length === 0) return;
+        const restored: Tab[] = entries.map((e) =>
+          createTab({
+            id: e.tabId,
+            content: e.content,
+            savedContent: "",
+          }),
+        );
+        setTabs(restored);
+        setActiveTabId(restored[0]!.id);
+        window.electronAPI.tempClear();
+      });
+    };
+
+    if (settings.continueSession) {
+      window.electronAPI.sessionLoad().then((data) => {
+        const session = data as SessionData | null;
+        if (session && session.tabs.length > 0) {
+          const restored: Tab[] = session.tabs.map((t) =>
+            createTab({
+              id: t.id,
+              filePath: t.filePath,
+              fileName: t.fileName,
+              content: t.content,
+              savedContent: t.savedContent,
+              previewHtml: t.previewHtml,
+              previewKind: t.previewKind as Tab["previewKind"],
+            }),
+          );
+          setTabs(restored);
+          const activeExists = restored.some(
+            (t) => t.id === session.activeTabId,
+          );
+          setActiveTabId(activeExists ? session.activeTabId : restored[0]!.id);
+          return;
+        }
+        // No session saved yet — fall back to temp restore
+        restoreTemp();
+      });
+    } else {
+      restoreTemp();
+    }
   }, []);
 
   // Clear temp when auto-save or persist is turned off
@@ -160,6 +206,13 @@ function App() {
       window.electronAPI.tempClear();
     }
   }, [settings.autoSave, settings.persistUntitled]);
+
+  // Clear saved session when the setting is turned off
+  useEffect(() => {
+    if (!settings.continueSession) {
+      window.electronAPI.sessionSave(null);
+    }
+  }, [settings.continueSession]);
 
   // Persist ALL modified tabs to temp (debounced, 1s)
   // Skip files larger than ~1 MB to avoid I/O overhead from large temp writes
@@ -179,17 +232,58 @@ function App() {
     return () => clearTimeout(timer);
   }, [tabs, settings.autoSave, settings.persistUntitled]);
 
+  // Persist session for "continue where you left off" (debounced, 1s)
+  useEffect(() => {
+    if (!settings.continueSession) return;
+    const timer = setTimeout(() => {
+      const session: SessionData = {
+        tabs: tabs.map((t) => ({
+          id: t.id,
+          filePath: t.filePath,
+          fileName: t.fileName,
+          content: t.content,
+          savedContent: t.savedContent,
+          previewHtml: t.previewHtml,
+          previewKind: t.previewKind,
+        })),
+        activeTabId,
+      };
+      window.electronAPI.sessionSave(session);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [tabs, activeTabId, settings.continueSession]);
+
   // Listen for close-request from main process
   useEffect(() => {
     return window.electronAPI.onCloseRequest(() => {
-      const hasUnsaved = tabs.some((t) => t.content !== t.savedContent);
-      if (hasUnsaved && !settings.autoSave) {
-        setCloseConfirmOpen(true);
-      } else {
-        window.electronAPI.closeConfirm();
-      }
+      const handleClose = async () => {
+        // Save session before closing so tabs are restored next launch
+        if (settings.continueSession) {
+          const session: SessionData = {
+            tabs: tabs.map((t) => ({
+              id: t.id,
+              filePath: t.filePath,
+              fileName: t.fileName,
+              content: t.content,
+              savedContent: t.savedContent,
+              previewHtml: t.previewHtml,
+              previewKind: t.previewKind,
+            })),
+            activeTabId,
+          };
+          await window.electronAPI.sessionSave(session);
+        }
+
+        const hasUnsaved = tabs.some((t) => t.content !== t.savedContent);
+        if (hasUnsaved && !settings.autoSave) {
+          setCloseConfirmOpen(true);
+        } else {
+          window.electronAPI.closeConfirm();
+        }
+      };
+      handleClose();
     });
-  }, [tabs, settings.autoSave]);
+  }, [tabs, activeTabId, settings.autoSave, settings.continueSession]);
 
   // Auto-save files with a path (debounced, 2s)
   useEffect(() => {

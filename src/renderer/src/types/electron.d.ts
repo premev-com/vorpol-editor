@@ -38,6 +38,8 @@ interface ElectronAPI {
   tempDelete: (tabId: string) => Promise<boolean>;
   tempList: () => Promise<{ tabId: string; content: string }[]>;
   tempClear: () => Promise<boolean>;
+  sessionSave: (data: unknown) => Promise<boolean>;
+  sessionLoad: () => Promise<unknown>;
   openExternal: (url: string) => Promise<void>;
   // Update & version tracking
   getVersion: () => Promise<string>;

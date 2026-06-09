@@ -253,6 +253,36 @@ ipcMain.handle("temp:clear", async () => {
   return true;
 });
 
+// Session persistence (continue where you left off)
+
+const SESSION_FILE = "session.json";
+
+ipcMain.handle("session:save", async (_, sessionData: unknown) => {
+  try {
+    const dir = getTempDir();
+    const filePath = join(dir, SESSION_FILE);
+    if (sessionData == null) {
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      return true;
+    }
+    fs.writeFileSync(filePath, JSON.stringify(sessionData), "utf-8");
+    return true;
+  } catch (err) {
+    console.error("Failed to save session:", err);
+    return false;
+  }
+});
+
+ipcMain.handle("session:load", async () => {
+  try {
+    const filePath = join(getTempDir(), SESSION_FILE);
+    if (!fs.existsSync(filePath)) return null;
+    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  } catch {
+    return null;
+  }
+});
+
 ipcMain.handle("shell:openExternal", async (_, url: string) => {
   return shell.openExternal(url);
 });

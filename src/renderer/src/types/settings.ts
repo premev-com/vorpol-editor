@@ -15,6 +15,7 @@ export interface EditorSettings {
   autoSave: boolean;
   syncScroll: boolean;
   persistUntitled: boolean;
+  continueSession: boolean;
   previewFontSize: number;
 }
 
@@ -26,5 +27,6 @@ export const DEFAULT_SETTINGS: EditorSettings = {
   autoSave: true,
   syncScroll: true,
   persistUntitled: true,
+  continueSession: false,
   previewFontSize: 16,
 };

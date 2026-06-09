@@ -49,6 +49,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
       { tabId: string; content: string }[]
     >,
   tempClear: () => ipcRenderer.invoke("temp:clear"),
+  sessionSave: (data: unknown) => ipcRenderer.invoke("session:save", data),
+  sessionLoad: () => ipcRenderer.invoke("session:load") as Promise<unknown>,
   openExternal: (url: string) => ipcRenderer.invoke("shell:openExternal", url),
   // Update & version tracking
   getVersion: () => ipcRenderer.invoke("app:getVersion") as Promise<string>,
