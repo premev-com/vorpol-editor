@@ -52,7 +52,7 @@ export function TitleBar({
               onClick={() => onSelectTab(tab.id)}
               style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
               className={cn(
-                "group relative h-8 flex items-center gap-1.5 pl-3 pr-2 text-xs border-r border-border transition-colors flex-1 min-w-15 max-w-30 mt-auto",
+                "group relative h-8 flex items-center gap-1.5 pl-3 pr-2 text-xs border-r border-border transition-colors flex-1 min-w-15 max-w-50 mt-auto",
                 active
                   ? "bg-background text-foreground"
                   : "bg-transparent text-muted-foreground hover:bg-accent/50",
