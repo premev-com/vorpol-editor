@@ -23,6 +23,8 @@ interface EditorProps {
   wordWrap: boolean;
   /** Position range to select and scroll to (for search navigation) */
   selection?: { from: number; to: number } | null;
+  /** Called with scroll fraction [0-1] when the editor is scrolled */
+  onScrollFraction?: (fraction: number) => void;
 }
 
 export function Editor({
@@ -32,6 +34,7 @@ export function Editor({
   fileName,
   wordWrap,
   selection,
+  onScrollFraction,
 }: EditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -41,6 +44,8 @@ export function Editor({
   onSaveRef.current = onSave;
   const internalChangeRef = useRef(false);
   const externalValueRef = useRef(value);
+  const onScrollFractionRef = useRef(onScrollFraction);
+  onScrollFractionRef.current = onScrollFraction;
   const wordWrapCompartment = useRef(new Compartment());
 
   useEffect(() => {
@@ -102,7 +107,18 @@ export function Editor({
     viewRef.current = view;
     externalValueRef.current = value;
 
-    return () => view.destroy();
+    // Sync scroll: emit scroll fraction from the editor's scroller
+    const scroller = view.scrollDOM;
+    const onScroll = () => {
+      const max = scroller.scrollHeight - scroller.clientHeight;
+      if (max > 0) onScrollFractionRef.current?.(scroller.scrollTop / max);
+    };
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      scroller.removeEventListener("scroll", onScroll);
+      view.destroy();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileName]);
 

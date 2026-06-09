@@ -175,6 +175,7 @@ export function EditorArea({
             fileName={fileName ?? "untitled.md"}
             wordWrap={wordWrap}
             selection={selection}
+            onScrollFraction={onScrollFraction}
           />
         </div>
 
