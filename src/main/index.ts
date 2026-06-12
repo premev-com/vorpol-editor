@@ -10,6 +10,12 @@ import { autoUpdater } from "electron-updater";
 let mainWindow: BrowserWindow | null = null;
 let closeConfirmed = false;
 
+// The version the user updated to (stored from update-downloaded event)
+let pendingUpdateVersion: string | null = null;
+
+// API base URL for update analytics
+const API_URL = process.env["VORPOL_API_URL"] || "http://localhost:3000";
+
 // Single-instance lock
 
 const gotTheLock = app.requestSingleInstanceLock();
@@ -309,6 +315,7 @@ autoUpdater.on("download-progress", (progress) => {
 });
 
 autoUpdater.on("update-downloaded", (info) => {
+  pendingUpdateVersion = info.version;
   mainWindow?.webContents.send("update:downloaded", info);
 });
 
@@ -338,7 +345,19 @@ ipcMain.handle("update:download", async () => {
   }
 });
 
-ipcMain.handle("update:install", () => {
+ipcMain.handle("update:install", async () => {
+  // Record the update to the API before quitting
+  if (pendingUpdateVersion) {
+    try {
+      await fetch(`${API_URL}/api/updates/record`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ version: pendingUpdateVersion }),
+      });
+    } catch (err) {
+      console.error("Failed to record update:", err);
+    }
+  }
   autoUpdater.quitAndInstall();
 });
 
