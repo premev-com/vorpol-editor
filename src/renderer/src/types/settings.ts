@@ -17,6 +17,7 @@ export interface EditorSettings {
   persistUntitled: boolean;
   continueSession: boolean;
   previewFontSize: number;
+  showDragHandle: boolean;
 }
 
 export const DEFAULT_SETTINGS: EditorSettings = {
@@ -29,4 +30,5 @@ export const DEFAULT_SETTINGS: EditorSettings = {
   persistUntitled: true,
   continueSession: false,
   previewFontSize: 16,
+  showDragHandle: true,
 };

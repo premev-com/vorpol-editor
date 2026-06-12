@@ -677,6 +677,7 @@ function App() {
         onSelectTab={setActiveTabId}
         onCloseTab={handleCloseTab}
         onNewTab={handleNewTab}
+        showDragHandle={settings.showDragHandle}
       />
 
       <Menubar

@@ -147,6 +147,12 @@ export function SettingsModal({
                 onChange={(v) => update({ continueSession: v })}
               />
             </SettingRow>
+            <SettingRow label="Show drag handle">
+              <Toggle
+                checked={settings.showDragHandle}
+                onChange={(v) => update({ showDragHandle: v })}
+              />
+            </SettingRow>
           </section>
 
           <section className="space-y-3">
