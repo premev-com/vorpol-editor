@@ -21,6 +21,7 @@ interface EditorProps {
   onSave: (content: string) => void;
   fileName: string;
   wordWrap: boolean;
+  fontSize: number;
   /** Position range to select and scroll to (for search navigation) */
   selection?: { from: number; to: number } | null;
   /** Called with scroll fraction [0-1] when the editor is scrolled */
@@ -33,6 +34,7 @@ export function Editor({
   onSave,
   fileName,
   wordWrap,
+  fontSize,
   selection,
   onScrollFraction,
 }: EditorProps) {
@@ -47,6 +49,7 @@ export function Editor({
   const onScrollFractionRef = useRef(onScrollFraction);
   onScrollFractionRef.current = onScrollFraction;
   const wordWrapCompartment = useRef(new Compartment());
+  const fontSizeCompartment = useRef(new Compartment());
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -81,6 +84,9 @@ export function Editor({
         syntaxHighlighting(editorHighlight),
         updateListener,
         wordWrapCompartment.current.of(wordWrap ? EditorView.lineWrapping : []),
+        fontSizeCompartment.current.of(
+          EditorView.theme({ "&": { fontSize: `${fontSize}px` } }),
+        ),
         ...(getLanguage(fileName) ? [getLanguage(fileName)!] : []),
         EditorView.theme(
           {
@@ -132,6 +138,17 @@ export function Editor({
       ),
     });
   }, [wordWrap]);
+
+  // Update font size dynamically
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: fontSizeCompartment.current.reconfigure(
+        EditorView.theme({ "&": { fontSize: `${fontSize}px` } }),
+      ),
+    });
+  }, [fontSize]);
 
   useEffect(() => {
     if (internalChangeRef.current) {

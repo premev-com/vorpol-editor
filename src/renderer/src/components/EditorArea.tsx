@@ -51,7 +51,7 @@ export function EditorArea({
   onChange,
   onSave,
   onReplaceCommit,
-  editorFontSize: _editorFontSize,
+  editorFontSize,
   previewFontSize,
   tabSize: _tabSize,
   wordWrap,
@@ -174,6 +174,7 @@ export function EditorArea({
             onSave={onSave}
             fileName={fileName ?? "untitled.md"}
             wordWrap={wordWrap}
+            fontSize={editorFontSize}
             selection={selection}
             onScrollFraction={onScrollFraction}
           />
@@ -231,6 +232,7 @@ export function EditorArea({
           onSave={onSave}
           fileName={fileName ?? "untitled"}
           wordWrap={wordWrap}
+          fontSize={editorFontSize}
           selection={selection}
         />
       </div>
