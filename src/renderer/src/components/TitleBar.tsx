@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, X, Save, Minus, Square, X as CloseIcon } from "lucide-react";
+import { Plus, X, Minus, Square, X as CloseIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TabInfo {
@@ -14,7 +14,6 @@ interface TitleBarProps {
   onSelectTab: (id: string) => void;
   onCloseTab: (id: string) => void;
   onNewTab: () => void;
-  onSave: () => void;
 }
 
 export function TitleBar({
@@ -23,7 +22,6 @@ export function TitleBar({
   onSelectTab,
   onCloseTab,
   onNewTab,
-  onSave,
 }: TitleBarProps) {
   const [maximized, setMaximized] = useState(false);
 
@@ -32,9 +30,6 @@ export function TitleBar({
     window.electronAPI.isMaximized().then(setMaximized);
     return window.electronAPI.onMaximizeChange(setMaximized);
   }, []);
-
-  const activeModified =
-    tabs.find((t) => t.id === activeTabId)?.isModified ?? false;
 
   return (
     <header
@@ -92,25 +87,6 @@ export function TitleBar({
           title="New tab"
         >
           <Plus className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      {/* Save button */}
-      <div
-        className="flex items-center gap-1 px-2 flex-shrink-0"
-        style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-      >
-        <button
-          onClick={onSave}
-          className={cn(
-            "h-6 inline-flex items-center gap-1 rounded-md px-2 text-[11px] font-medium transition-colors",
-            activeModified
-              ? "bg-primary text-primary-foreground shadow hover:bg-primary/90"
-              : "text-muted-foreground hover:text-foreground hover:bg-accent",
-          )}
-        >
-          <Save className="w-3 h-3" />
-          Save
         </button>
       </div>
 

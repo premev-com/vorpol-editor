@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Download, Loader2, RefreshCw } from "lucide-react";
+import { Download, Loader2, RefreshCw, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UpdateStatus } from "@/types/settings";
 
@@ -24,6 +24,8 @@ interface MenubarProps {
   updateVersion: string | null;
   downloadProgress: number;
   onDownloadStart?: () => void;
+  onSave?: () => void;
+  activeModified?: boolean;
 }
 
 export function Menubar({
@@ -32,6 +34,8 @@ export function Menubar({
   updateVersion,
   downloadProgress,
   onDownloadStart,
+  onSave,
+  activeModified,
 }: MenubarProps) {
   const [openMenu, setOpenMenu] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -147,9 +151,23 @@ export function Menubar({
         );
       })}
 
-      {/* Right side — update button */}
-      {showUpdateButton && (
-        <div className="ml-auto flex items-center pr-2">
+      {/* Right side — save + update button */}
+      <div className="ml-auto flex items-center gap-1 pr-2">
+        {onSave && (
+          <button
+            onClick={onSave}
+            className={cn(
+              "h-6 inline-flex items-center gap-1 rounded-md px-2 text-[11px] font-medium transition-colors",
+              activeModified
+                ? "bg-primary text-primary-foreground shadow hover:bg-primary/90"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent",
+            )}
+          >
+            <Save className="w-3 h-3" />
+            Save
+          </button>
+        )}
+        {showUpdateButton && (
           <button
             onClick={handleUpdateClick}
             className={cn(
@@ -187,8 +205,8 @@ export function Menubar({
               </>
             )}
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </nav>
   );
 }

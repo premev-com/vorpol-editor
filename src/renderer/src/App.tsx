@@ -677,7 +677,6 @@ function App() {
         onSelectTab={setActiveTabId}
         onCloseTab={handleCloseTab}
         onNewTab={handleNewTab}
-        onSave={() => handleSave(activeTab.content)}
       />
 
       <Menubar
@@ -686,6 +685,8 @@ function App() {
         updateVersion={updateVersion}
         downloadProgress={downloadProgress}
         onDownloadStart={() => setUpdateStatus("downloading")}
+        onSave={() => handleSave(activeTab.content)}
+        activeModified={isModified}
       />
 
       <EditorArea
