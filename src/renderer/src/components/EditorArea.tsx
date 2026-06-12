@@ -31,7 +31,6 @@ interface EditorAreaProps {
   onReplaceCommit: () => void;
   editorFontSize: number;
   previewFontSize: number;
-  tabSize: number;
   wordWrap: boolean;
   previewVisible: boolean;
   splitPosition: number;
@@ -53,7 +52,6 @@ export function EditorArea({
   onReplaceCommit,
   editorFontSize,
   previewFontSize,
-  tabSize: _tabSize,
   wordWrap,
   previewVisible,
   splitPosition,

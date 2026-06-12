@@ -10,7 +10,6 @@ export type UpdateStatus =
 export interface EditorSettings {
   theme: "dark" | "light";
   editorFontSize: number;
-  tabSize: number;
   wordWrap: boolean;
   autoSave: boolean;
   syncScroll: boolean;
@@ -23,7 +22,6 @@ export interface EditorSettings {
 export const DEFAULT_SETTINGS: EditorSettings = {
   theme: "dark",
   editorFontSize: 14,
-  tabSize: 2,
   wordWrap: true,
   autoSave: true,
   syncScroll: true,

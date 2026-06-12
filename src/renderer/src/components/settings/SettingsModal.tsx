@@ -71,25 +71,6 @@ export function SettingsModal({
               />
             </SettingRow>
 
-            <SettingRow label="Tab size" value={`${settings.tabSize} spaces`}>
-              <select
-                value={settings.tabSize}
-                onChange={(e) => update({ tabSize: Number(e.target.value) })}
-                className="bg-muted border border-border rounded-md px-2 py-0.5 text-xs text-foreground outline-none focus:border-primary appearance-none pr-6"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 0.4rem center",
-                }}
-              >
-                {[2, 4, 6, 8].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </SettingRow>
-
             <SettingRow label="Word wrap">
               <Toggle
                 checked={settings.wordWrap}

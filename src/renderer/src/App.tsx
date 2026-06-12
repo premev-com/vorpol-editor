@@ -701,7 +701,6 @@ function App() {
         onReplaceCommit={handleReplaceCommit}
         editorFontSize={settings.editorFontSize}
         previewFontSize={settings.previewFontSize}
-        tabSize={settings.tabSize}
         wordWrap={settings.wordWrap}
         previewVisible={previewVisible}
         splitPosition={splitPosition}
