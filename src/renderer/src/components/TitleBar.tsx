@@ -39,9 +39,7 @@ export function TitleBar({
       style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
     >
       {showDragHandle && (
-        <div className="flex items-center justify-center h-4 w-full">
-          <div className="h-1 w-[95%] rounded-full bg-muted-foreground/30" />
-        </div>
+        <div className="h-[6px] w-full rounded-full bg-muted-foreground/30" />
       )}
 
       {/* Content row — tabs and window controls */}
