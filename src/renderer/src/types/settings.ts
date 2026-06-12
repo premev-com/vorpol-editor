@@ -23,10 +23,10 @@ export const DEFAULT_SETTINGS: EditorSettings = {
   theme: "dark",
   editorFontSize: 14,
   wordWrap: true,
-  autoSave: true,
+  autoSave: false,
   syncScroll: true,
   persistUntitled: true,
   continueSession: false,
   previewFontSize: 16,
-  showDragHandle: true,
+  showDragHandle: false,
 };

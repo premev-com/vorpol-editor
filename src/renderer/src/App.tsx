@@ -290,8 +290,10 @@ function App() {
           await window.electronAPI.sessionSave(session);
         }
 
-        const hasUnsaved = tabs.some((t) => t.content !== t.savedContent);
-        if (hasUnsaved && !settings.autoSave) {
+        const hasUnsaved = settings.persistUntitled
+          ? tabs.some((t) => t.filePath && t.content !== t.savedContent)
+          : tabs.some((t) => t.content !== t.savedContent);
+        if (hasUnsaved) {
           setCloseConfirmOpen(true);
         } else {
           window.electronAPI.closeConfirm();
@@ -777,9 +779,8 @@ function App() {
               Unsaved changes
             </h3>
             <p className="text-xs text-muted-foreground mb-4">
-              You have unsaved changes in one or more untitled tabs. These
-              changes will be lost when you close the app. Do you want to close
-              anyway?
+              You have unsaved changes in one or more tabs. These changes may be
+              lost when you close the app. Do you want to close anyway?
             </p>
             <div className="flex justify-end gap-2">
               <button

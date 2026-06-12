@@ -9,6 +9,7 @@ import { autoUpdater } from "electron-updater";
 
 let mainWindow: BrowserWindow | null = null;
 let closeConfirmed = false;
+let forceCloseTimer: ReturnType<typeof setTimeout> | null = null;
 
 // The version the user updated to (stored from update-downloaded event)
 let pendingUpdateVersion: string | null = null;
@@ -100,12 +101,18 @@ function createWindow(): void {
 
     // If the renderer doesn't respond within 5 seconds (e.g. during system
     // shutdown), force-close to avoid blocking the OS from quitting.
-    const forceCloseTimer = setTimeout(() => {
+    forceCloseTimer = setTimeout(() => {
+      forceCloseTimer = null;
       closeConfirmed = true;
       mainWindow?.close();
     }, 5000);
 
-    const cleanup = () => clearTimeout(forceCloseTimer);
+    const cleanup = () => {
+      if (forceCloseTimer) {
+        clearTimeout(forceCloseTimer);
+        forceCloseTimer = null;
+      }
+    };
     mainWindow?.once("close", cleanup);
   });
 
@@ -160,11 +167,20 @@ ipcMain.handle("window:isMaximized", () => mainWindow?.isMaximized() ?? false);
 
 // Renderer responds to close-request
 ipcMain.on("window:closeConfirm", () => {
+  if (forceCloseTimer) {
+    clearTimeout(forceCloseTimer);
+    forceCloseTimer = null;
+  }
   closeConfirmed = true;
   setImmediate(() => mainWindow?.close());
 });
 ipcMain.on("window:closeCancel", () => {
-  // do nothing — close was cancelled
+  // Close was cancelled — stop the force-close timer
+  if (forceCloseTimer) {
+    clearTimeout(forceCloseTimer);
+    forceCloseTimer = null;
+  }
+  closeConfirmed = false;
 });
 
 ipcMain.handle("file:open", async () => {
@@ -393,5 +409,9 @@ app.on("window-all-closed", () => {
 
 // Safety net for system shutdown / force-quit: don't block the close
 app.on("before-quit", () => {
+  if (forceCloseTimer) {
+    clearTimeout(forceCloseTimer);
+    forceCloseTimer = null;
+  }
   closeConfirmed = true;
 });
