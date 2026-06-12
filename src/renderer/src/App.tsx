@@ -92,6 +92,7 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [scrollFraction, setScrollFraction] = useState(0);
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+  const [closeTabTarget, setCloseTabTarget] = useState<string | null>(null);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus>("idle");
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
@@ -516,6 +517,13 @@ function App() {
 
   const handleCloseTab = useCallback(
     (id: string) => {
+      const tab = tabs.find((t) => t.id === id);
+      const hasUnsaved = tab && tab.content !== tab.savedContent;
+      if (hasUnsaved) {
+        setCloseTabTarget(id);
+        return;
+      }
+
       window.electronAPI.tempDelete(id);
       setTabs((prev) => {
         if (prev.length <= 1) return [createTab()];
@@ -532,6 +540,25 @@ function App() {
     },
     [activeTabId, tabs],
   );
+
+  const handleConfirmCloseTab = useCallback(() => {
+    const id = closeTabTarget;
+    if (!id) return;
+    setCloseTabTarget(null);
+    window.electronAPI.tempDelete(id);
+    setTabs((prev) => {
+      if (prev.length <= 1) return [createTab()];
+      return prev.filter((t) => t.id !== id);
+    });
+    if (id === activeTabId) {
+      setActiveTabId((prevId) => {
+        const remaining = tabs.filter((t) => t.id !== id && t.id !== prevId);
+        return remaining.length > 0
+          ? remaining[remaining.length - 1]!.id
+          : tabs[0]!.id;
+      });
+    }
+  }, [closeTabTarget, activeTabId, tabs]);
 
   // -- Content change ------------------------------------------------------
 
@@ -748,6 +775,34 @@ function App() {
                   setCloseConfirmOpen(false);
                   window.electronAPI.closeConfirm();
                 }}
+                className="h-7 px-3 rounded-md text-xs font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+              >
+                Close anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Close tab confirmation */}
+      {closeTabTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-[380px] rounded-lg border border-border bg-card shadow-2xl p-5">
+            <h3 className="text-sm font-semibold text-foreground mb-2">
+              Unsaved changes
+            </h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              This file has unsaved changes. Do you want to close it anyway?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setCloseTabTarget(null)}
+                className="h-7 px-3 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmCloseTab}
                 className="h-7 px-3 rounded-md text-xs font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
               >
                 Close anyway

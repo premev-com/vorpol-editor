@@ -97,6 +97,16 @@ function createWindow(): void {
     if (closeConfirmed) return;
     e.preventDefault();
     mainWindow?.webContents.send("window:closeRequest");
+
+    // If the renderer doesn't respond within 5 seconds (e.g. during system
+    // shutdown), force-close to avoid blocking the OS from quitting.
+    const forceCloseTimer = setTimeout(() => {
+      closeConfirmed = true;
+      mainWindow?.close();
+    }, 5000);
+
+    const cleanup = () => clearTimeout(forceCloseTimer);
+    mainWindow?.once("close", cleanup);
   });
 
   mainWindow.on("closed", () => {
@@ -379,4 +389,9 @@ app.whenReady().then(() => {
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
+});
+
+// Safety net for system shutdown / force-quit: don't block the close
+app.on("before-quit", () => {
+  closeConfirmed = true;
 });
