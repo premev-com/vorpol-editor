@@ -175,7 +175,17 @@ function App() {
       window.electronAPI.sessionLoad().then((data) => {
         const session = data as SessionData | null;
         if (session && session.tabs.length > 0) {
-          const restored: Tab[] = session.tabs.map((t) =>
+          // When persistUntitled is off, only restore tabs with a file path
+          const tabsToRestore = settings.persistUntitled
+            ? session.tabs
+            : session.tabs.filter((t) => t.filePath);
+
+          if (tabsToRestore.length === 0) {
+            restoreTemp();
+            return;
+          }
+
+          const restored: Tab[] = tabsToRestore.map((t) =>
             createTab({
               id: t.id,
               filePath: t.filePath,
@@ -234,25 +244,28 @@ function App() {
   }, [tabs, settings.autoSave, settings.persistUntitled]);
 
   // Persist session for "continue where you left off" (debounced, 1s)
+  // Respects persistUntitled — if off, only saved files are kept in the session
   useEffect(() => {
     if (!settings.continueSession) return;
     const timer = setTimeout(() => {
       const session: SessionData = {
-        tabs: tabs.map((t) => ({
-          id: t.id,
-          filePath: t.filePath,
-          fileName: t.fileName,
-          content: t.content,
-          savedContent: t.savedContent,
-          previewHtml: t.previewHtml,
-          previewKind: t.previewKind,
-        })),
+        tabs: tabs
+          .filter((t) => settings.persistUntitled || t.filePath)
+          .map((t) => ({
+            id: t.id,
+            filePath: t.filePath,
+            fileName: t.fileName,
+            content: t.content,
+            savedContent: t.savedContent,
+            previewHtml: t.previewHtml,
+            previewKind: t.previewKind,
+          })),
         activeTabId,
       };
       window.electronAPI.sessionSave(session);
     }, 1000);
     return () => clearTimeout(timer);
-  }, [tabs, activeTabId, settings.continueSession]);
+  }, [tabs, activeTabId, settings.continueSession, settings.persistUntitled]);
 
   // Listen for close-request from main process
   useEffect(() => {
@@ -261,15 +274,17 @@ function App() {
         // Save session before closing so tabs are restored next launch
         if (settings.continueSession) {
           const session: SessionData = {
-            tabs: tabs.map((t) => ({
-              id: t.id,
-              filePath: t.filePath,
-              fileName: t.fileName,
-              content: t.content,
-              savedContent: t.savedContent,
-              previewHtml: t.previewHtml,
-              previewKind: t.previewKind,
-            })),
+            tabs: tabs
+              .filter((t) => settings.persistUntitled || t.filePath)
+              .map((t) => ({
+                id: t.id,
+                filePath: t.filePath,
+                fileName: t.fileName,
+                content: t.content,
+                savedContent: t.savedContent,
+                previewHtml: t.previewHtml,
+                previewKind: t.previewKind,
+              })),
             activeTabId,
           };
           await window.electronAPI.sessionSave(session);
@@ -284,7 +299,13 @@ function App() {
       };
       handleClose();
     });
-  }, [tabs, activeTabId, settings.autoSave, settings.continueSession]);
+  }, [
+    tabs,
+    activeTabId,
+    settings.autoSave,
+    settings.continueSession,
+    settings.persistUntitled,
+  ]);
 
   // Auto-save files with a path (debounced, 2s)
   useEffect(() => {
